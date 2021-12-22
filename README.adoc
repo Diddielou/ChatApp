@@ -2,7 +2,7 @@
 
 === Bearbeitet von
 
-* Vorname Nachname
+* Dinah Bolli
 
 === Kompatibel mit der App von
 
@@ -11,7 +11,7 @@
 
 === Herausstellungsmerkmal meiner App
 
-* ...
+* besonders einfache Bedienbarkeit
 
 
 === Abgabe
