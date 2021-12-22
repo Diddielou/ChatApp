@@ -1,0 +1,69 @@
+== Emoba Assignment 2 - ThatsApp
+
+=== Bearbeitet von
+
+* Vorname Nachname
+
+=== Kompatibel mit der App von
+
+* ...
+* ...
+
+=== Herausstellungsmerkmal meiner App
+
+* ...
+
+
+=== Abgabe
+
+* _Klasse 5iCa_, Montag, 17.1.2022, 8:00 Uhr
+* _Klasse 5iCb_, Mittwoch, 19.1.2022, 12:00 Uhr
+
+
+Die Abgabe erfolgt durch ein "Push" auf den Master-Branch Ihres GitHub-Repositories.
+
+
+=== Die Aufgabe: Chat-Applikation
+
+Entwerfen und implementieren Sie eine Chat-Applikation als native Android App mit Kotlin und Jetpack Compose.
+
+Die im Unterricht gezeigte App 'ThatsApp' ist nur eine mögliche Umsetzung des gewünschten Funktionsumfangs. Sie können dieses UI übernehmen oder aber einen eigenen Entwurf umsetzen.
+
+Anforderungen:
+
+* Legen Sie das wichtigste Herausstellungsmerkmal Ihrer App fest und beschreiben Sie es im obigen Abschnitt
+** Beispiele: minimale Datenspeicherung auf dem Server; gesamte Chat-Historie wird abgespeichert; besonders einfache Bedienbarkeit, etc.
+* Gewünschte Funktionalität
+** Verschicken von Chat-Nachrichten an einzelne Personen einer Chat-Gruppe.
+** Verschicken eines, mit der Kamera des Android-Devices aktuell aufgenommenen, Bildes an den Chat-Teilnehmer.
+** Verschicken der aktuellen GPS-Position an den Chat-Teilnehmer.
+** Übersicht über alle Teilnehmer einer Chat-Gruppe.
+** Profile-Screen mit Name und Avatar-Bild.
+* Verwendung von MQTT zur Nachrichten-Verteilung
+* Versuchen Sie sich mit möglichst vielen anderen auf ein einheitliches JSON-Format zum Austausch von Nachrichten zu einigen.
+** Idealerweise können unterschiedliche Apps zum Chatten verwendet werden.
+* Das UI ist komplett mit Jetpack Compose zu implementieren.
+** https://developer.android.com/jetpack/compose
+* Implementierungssprache für die gesamte Applikation ist Kotlin.
+* Die im Unterricht erarbeitete Grundstruktur einer Android-App ist anzuwenden.
+
+
+=== Bewertung
+
+Es können in diesem Assignment maximal 4 Punkte erreicht werden. Der Fokus liegt dabei, neben Umsetzung der gewünschten Funktionalität, auf der Code-Qualität. Der Coolness-Faktor des UI wird über den Coolest App Award berücksichtigt.
+
+* 4 Punkte
+** Umsetzung der gesamten gewünschten Funktionalität und der oben genannten Grundanforderungen
+** App stimmt mit dem genannten Herausstellungsmerkmal überein
+** Strukturierung der App in 3 Layer
+** UI Code ist klar strukturiert in unabhängige Screens und via Composable Functions
+** Chat mit mindestens einer weiteren App ist möglich
+* 1 Punkt
+** Text-Nachrichten zwischen zwei Teilnehmern können ausgetauscht werden. Die gesendeten/empfangenen Nachrichten der beiden Teilnehmer werden angezeigt. Der Avatar und der Name des Chat-Teilnehmers wird angezeigt.
+* 0 Punkte
+** falls die Kriterien für einen Punkt nicht erfüllt sind ;-)
+** falls MQTT nicht zum Nachrichtenaustausch verwendet wird
+** falls das Projekt nicht kompilierfähig ist
+** falls die App abstürzt bevor der erste Screen angezeigt wird
+** falls ihr Name nicht unter 'bearbeitet von' eingetragen ist
+** für Plagiate
