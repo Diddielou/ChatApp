@@ -6,8 +6,14 @@
 
 === Kompatibel mit der App von
 
-* ...
-* ...
+* Michael Job
+* Tobias Bossert
+* Moritz Wirth
+* Jürg Gnos
+* Jeffrey Smith
+* Ives With
+* Patrick Gutter
+* Pascal Hostettler
 
 === Herausstellungsmerkmal meiner App
 
@@ -33,12 +39,14 @@ Anforderungen:
 
 * Legen Sie das wichtigste Herausstellungsmerkmal Ihrer App fest und beschreiben Sie es im obigen Abschnitt
 ** Beispiele: minimale Datenspeicherung auf dem Server; gesamte Chat-Historie wird abgespeichert; besonders einfache Bedienbarkeit, etc.
+
 * Gewünschte Funktionalität
 ** Verschicken von Chat-Nachrichten an einzelne Personen einer Chat-Gruppe.
 ** Verschicken eines, mit der Kamera des Android-Devices aktuell aufgenommenen, Bildes an den Chat-Teilnehmer.
 ** Verschicken der aktuellen GPS-Position an den Chat-Teilnehmer.
 ** Übersicht über alle Teilnehmer einer Chat-Gruppe.
 ** Profile-Screen mit Name und Avatar-Bild.
+
 * Verwendung von MQTT zur Nachrichten-Verteilung
 * Versuchen Sie sich mit möglichst vielen anderen auf ein einheitliches JSON-Format zum Austausch von Nachrichten zu einigen.
 ** Idealerweise können unterschiedliche Apps zum Chatten verwendet werden.
