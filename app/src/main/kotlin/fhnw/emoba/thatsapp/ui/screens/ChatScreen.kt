@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import fhnw.emoba.freezerapp.ui.theme.gray300
-import fhnw.emoba.thatsapp.data.That
+import fhnw.emoba.thatsapp.data.ChatMessage
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 import fhnw.emoba.thatsapp.ui.UserInput
@@ -73,7 +73,7 @@ private fun Body(model: ThatsAppModel) {
             })
             */
 
-            AllThatsList(allThats, Modifier.constrainAs(allThatsPanel) {
+            AllMessagesList(allMessages, Modifier.constrainAs(allThatsPanel) {
                 width  = Dimension.fillToConstraints
                 height = Dimension.fillToConstraints
                 top.linkTo(parent.top, 0.dp)
@@ -119,7 +119,7 @@ private fun Info(text: String, modifier: Modifier) {
 
 
 @Composable
-private fun AllThatsList(thats: List<That>, modifier: Modifier) {
+private fun AllMessagesList(chatMessages: List<ChatMessage>, modifier: Modifier) {
     Box(
         modifier.border(
             width = 1.dp,
@@ -127,21 +127,21 @@ private fun AllThatsList(thats: List<That>, modifier: Modifier) {
             shape = RectangleShape
         )
     ) {
-        if (thats.isEmpty()) {
+        if (chatMessages.isEmpty()) {
             Text(
-                text = "Noch keine Thats",
+                text = "No messages yet.",
                 style = MaterialTheme.typography.h4,
                 modifier = Modifier.align(Alignment.Center)
             )
         } else {
             val scrollState = rememberLazyListState()
             LazyColumn(state = scrollState) {
-                items(thats) { ThatRow(it) }
+                items(chatMessages) { MessageRow(it) }
             }
 
             val scope = rememberCoroutineScope()
             SideEffect {
-                scope.launch { scrollState.animateScrollToItem(thats.size - 1) }
+                scope.launch { scrollState.animateScrollToItem(chatMessages.size - 1) }
             }
         }
     }
@@ -150,17 +150,16 @@ private fun AllThatsList(thats: List<That>, modifier: Modifier) {
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun ThatRow(that: That) {
-    with(that) {
+private fun MessageRow(chatMessage: ChatMessage) {
+    with(chatMessage) {
         // TODO: Attributes needed: Name, last message, lastTime
-        ListItem(text = { Text(message) },
-            overlineText = { Text(sender) }
+        ListItem(text = { Text(messageID) },
+            overlineText = { Text(senderID) }
         )
         Divider()
     }
 }
 
-// TODO Put PublishButton next to MessageField
 @ExperimentalComposeUiApi
 @Composable
 private fun MessageArea(model: ThatsAppModel, modifier: Modifier) {

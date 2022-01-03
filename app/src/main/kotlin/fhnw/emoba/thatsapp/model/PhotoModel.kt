@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import fhnw.emoba.thatsapp.data.CameraAppConnector
+import fhnw.emoba.thatsapp.data.connectors.CameraAppConnector
 
 class PhotoBooth(private val cameraAppConnector: CameraAppConnector) {
     private val modelScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

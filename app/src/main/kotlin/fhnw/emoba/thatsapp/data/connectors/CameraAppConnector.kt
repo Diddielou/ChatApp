@@ -1,4 +1,4 @@
-package fhnw.emoba.thatsapp.data
+package fhnw.emoba.thatsapp.data.connectors
 
 import android.annotation.SuppressLint
 import android.app.Activity

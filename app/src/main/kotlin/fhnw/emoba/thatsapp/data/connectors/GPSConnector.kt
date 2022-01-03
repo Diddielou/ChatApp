@@ -1,4 +1,4 @@
-package fhnw.emoba.thatsapp.data
+package fhnw.emoba.thatsapp.data.connectors
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import com.google.android.gms.location.LocationServices
 import androidx.core.app.ActivityCompat
+import fhnw.emoba.thatsapp.data.GeoPosition
 
 class GPSConnector(val activity: Activity) {
     private val PERMISSIONS = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,

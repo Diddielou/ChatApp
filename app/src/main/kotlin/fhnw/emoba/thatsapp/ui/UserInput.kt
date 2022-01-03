@@ -49,7 +49,7 @@ enum class MessageOption {
 @ExperimentalComposeUiApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-public fun UserInput(
+fun UserInput(
     model: ThatsAppModel,
     onMessageSent: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -74,8 +74,7 @@ public fun UserInput(
 
             Row(
                 Modifier
-                    .fillMaxWidth()
-                    .border(width = 1.dp, color = Color.Black),
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
             ) {
                     UserInputText(
@@ -200,6 +199,9 @@ private fun OptionExpanded(
             MessageOption.EMOJI -> EmojiOption(onTextAdded, focusRequester)
             MessageOption.PICTURE -> { }
             MessageOption.MAP -> { }
+            else -> {
+                null
+            }
         }
     }
 }
@@ -217,8 +219,7 @@ private fun UserInputText(
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
 
-    Column( Modifier.border(width = 1.dp, color = Color.Blue)
-    ) {
+    Column() {
         var lastFocusState by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = messageValue,
@@ -252,9 +253,7 @@ private fun SendButton(
     onMessageSent: () -> Unit
 ){
     // Send button
-    Column(
-        Modifier.border(width = 1.dp, color = Color.Red)
-    ) {
+    Column() {
         IconButton(
             modifier = Modifier
                 .height(47.dp)
