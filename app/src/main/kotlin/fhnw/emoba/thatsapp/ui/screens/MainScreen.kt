@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -15,6 +16,9 @@ import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 import kotlinx.coroutines.launch
 
+/*
+Displays all opened chats
+ */
 @ExperimentalComposeUiApi
 @Composable
 fun MainScreen(model: ThatsAppModel) {
@@ -23,10 +27,22 @@ fun MainScreen(model: ThatsAppModel) {
         topBar = { TopBar(model, scaffoldState) },
         drawerContent = { Drawer(model) },
         snackbarHost = { NotificationHost(it) },
-        content = { Body(model) }
-        // AddButton to Add User?
+        content = { Body(model) },
+        floatingActionButton = { AddUserButton(model) }
     )
     Notification(model, scaffoldState)
+}
+
+@Composable
+fun AddUserButton(model: ThatsAppModel) {
+    with(model) {
+        FloatingActionButton(
+            content = { Icon(Icons.Filled.PersonAdd, "Add chat") },
+            onClick = {
+                currentScreen = Screen.ADDCHAT
+                loadUserListImages()
+            })
+    }
 }
 
 @Composable
@@ -45,7 +61,10 @@ private fun TopBar(model: ThatsAppModel, scaffoldState: ScaffoldState) {
 /* CONTENT */
 @Composable
 private fun Body(model: ThatsAppModel) {
-    Text("Hello thatsApp")
+    Text("Here comes the list with opened Chats.")
+    // get list with chatMessages, filtered by userID (mine or one other)
+    // filter List with chatMessages down to one userId
+
 }
 
 
@@ -81,21 +100,20 @@ private fun Drawer(model: ThatsAppModel) {
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp, 20.dp, 20.dp, 20.dp)
+                .padding(20.dp)
                 .clickable(onClick = { toggleTheme() })
         ) {
             Switch(checked = darkTheme,
                 onCheckedChange = { toggleTheme() })
-            Text(text = toggleThemeText()) // , modifier = Modifier.size(10.dp)
+            Text(text = toggleThemeText())
         }
         Divider()
-        // TODO Go to ProfilePage
         Row(modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp, 20.dp, 20.dp, 20.dp)
+            .padding(20.dp)
             .clickable(onClick = { currentScreen = Screen.PROFILE })
         ){
-            Text("Edit Profile") // , modifier = Modifier.size(10.dp)
+            Text("Edit Profile")
         }
         Divider()
     }

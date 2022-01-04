@@ -22,6 +22,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import fhnw.emoba.freezerapp.ui.theme.gray300
 import fhnw.emoba.thatsapp.data.ChatMessage
+import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 import fhnw.emoba.thatsapp.ui.UserInput
@@ -32,8 +33,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatScreen(model: ThatsAppModel) {
     val scaffoldState = rememberScaffoldState()
+    val title = Screen.CHAT.title + (model.currentChatPartner!!.nickname)
+
     Scaffold(scaffoldState = scaffoldState,
-        topBar = { ChatTopBar(model, Screen.CHAT.title, Screen.MAIN, scaffoldState) }, // TODO getUserName from Model
+        topBar = { ChatTopBar(model, title, Screen.MAIN, scaffoldState) },
         snackbarHost = { NotificationHost(it) },
         content = { Body(model) }
     )
@@ -46,9 +49,11 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldStat
     with(model) {
         TopAppBar(
             title = { Heading3(text = title) },
-            navigationIcon = { IconButton(onClick = { currentScreen = screen }) {
-                Icon(Icons.Filled.ArrowBack, "Back")
-            } }
+            navigationIcon = {
+                IconButton(onClick = { currentScreen = screen }) {
+                    Icon(Icons.Filled.ArrowBack, "Back")
+                }
+            }
         )
     }
 }
@@ -60,25 +65,12 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldStat
 private fun Body(model: ThatsAppModel) {
     with(model) {
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-            val (brokerInfo, topicInfo, allThatsPanel, messageField) = createRefs()
-            // not needed
-            /*
-            Info(mqttBroker, Modifier.constrainAs(brokerInfo) {
-                top.linkTo(parent.top, 10.dp)
-                start.linkTo(parent.start, 10.dp)
-            })
-            Info(mainTopic, Modifier.constrainAs(topicInfo) {
-                top.linkTo(brokerInfo.bottom, 10.dp)
-                start.linkTo(parent.start, 10.dp)
-            })
-            */
-
-            AllMessagesList(allMessages, Modifier.constrainAs(allThatsPanel) {
-                width  = Dimension.fillToConstraints
+            val (allThatsPanel, messageField) = createRefs()
+            AllMessagesList(model, Modifier.constrainAs(allThatsPanel) {
+                width = Dimension.fillToConstraints
                 height = Dimension.fillToConstraints
                 top.linkTo(parent.top, 0.dp)
                 start.linkTo(parent.start, 10.dp)
-                //bottom.linkTo(messageField.top, 0.dp)
                 end.linkTo(parent.end, 10.dp)
             })
 
@@ -87,39 +79,16 @@ private fun Body(model: ThatsAppModel) {
                 start.linkTo(parent.start, 10.dp)
                 bottom.linkTo(parent.bottom, 10.dp)
                 end.linkTo(parent.end, 10.dp)
-                /*
-                top.linkTo(allFlapsPanel.bottom, 15.dp)
-                start.linkTo(parent.start, 10.dp)
-                bottom.linkTo(publishButton.top, 15.dp)
-                end.linkTo(parent.end, 10.dp)
-                 */
             })
-            /*
-            PublishButton(model, Modifier.constrainAs(publishButton) {
-                width = Dimension.fillToConstraints
-                start.linkTo(parent.start, 10.dp)
-                end.linkTo(parent.end, 10.dp)
-                bottom.linkTo(parent.bottom, 15.dp)
-            })
-             */
         }
     }
 }
 
-
-// not needed
 @Composable
-private fun Info(text: String, modifier: Modifier) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.h6,
-        modifier = modifier
-    )
-}
+private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
+    var messagesForThisChat =
+        model.currentChatPartner?.let { model.filterMessagesPerConversation(it) }
 
-
-@Composable
-private fun AllMessagesList(chatMessages: List<ChatMessage>, modifier: Modifier) {
     Box(
         modifier.border(
             width = 1.dp,
@@ -127,7 +96,7 @@ private fun AllMessagesList(chatMessages: List<ChatMessage>, modifier: Modifier)
             shape = RectangleShape
         )
     ) {
-        if (chatMessages.isEmpty()) {
+        if (messagesForThisChat!!.isEmpty()) {
             Text(
                 text = "No messages yet.",
                 style = MaterialTheme.typography.h4,
@@ -136,12 +105,20 @@ private fun AllMessagesList(chatMessages: List<ChatMessage>, modifier: Modifier)
         } else {
             val scrollState = rememberLazyListState()
             LazyColumn(state = scrollState) {
-                items(chatMessages) { MessageRow(it) }
+                items(messagesForThisChat) {
+                    model.currentChatPartner?.let { user ->
+                        MessageRowForeign(
+                            it,
+                            user
+                        )
+                    }
+
+                }
             }
 
             val scope = rememberCoroutineScope()
             SideEffect {
-                scope.launch { scrollState.animateScrollToItem(chatMessages.size - 1) }
+                scope.launch { scrollState.animateScrollToItem(messagesForThisChat.size - 1) }
             }
         }
     }
@@ -150,11 +127,26 @@ private fun AllMessagesList(chatMessages: List<ChatMessage>, modifier: Modifier)
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun MessageRow(chatMessage: ChatMessage) {
+private fun MessageRowForeign(chatMessage: ChatMessage, user: ChatUser) {
     with(chatMessage) {
         // TODO: Attributes needed: Name, last message, lastTime
-        ListItem(text = { Text(messageID) },
+        ListItem(text = { Text(chatMessage.receiverID) },
             overlineText = { Text(senderID) }
+        )
+        Divider()
+    }
+}
+
+// TODO cannot receive or deliver messages > ChatScreen
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun MessageRowSelf(model: ThatsAppModel, chatMessage: ChatMessage) {
+
+    with(chatMessage) {
+        // TODO: Attributes needed: Name, last message, lastTime
+        ListItem(text = { Text(chatMessage.senderID) },
+            overlineText = { Text(model.profileName) }
         )
         Divider()
     }

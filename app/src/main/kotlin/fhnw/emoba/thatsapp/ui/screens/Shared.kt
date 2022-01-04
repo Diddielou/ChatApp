@@ -23,12 +23,8 @@ fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldS
             title = { Text(text = title ) },
             navigationIcon = { IconButton(onClick = { currentScreen = screen }) {
                 Icon(Icons.Filled.ArrowBack, "Back")
-            } }
-            /*
-            actions = {
-                GoToPlayerButton(model = model, scope = scope, scaffoldState = scaffoldState)
+                }
             }
-             */
         )
     }
 }

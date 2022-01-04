@@ -37,13 +37,12 @@ data class ChatMessage(
             "senderID":  "$senderID", 
             "receiverID":  "$receiverID", 
             "payload":  "$payload", 
-            "messageType":  "$messageType", 
-             "message": "$messageType" 
+            "messageType":  "$messageType"
             }
             """
     }
 
-
+    // if publish
     fun createChatMessage() {
         when (messageType) {
             ChatPayloadContents.TEXT.name -> ChatText(payload)

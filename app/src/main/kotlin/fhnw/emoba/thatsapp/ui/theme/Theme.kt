@@ -26,7 +26,7 @@ private val AppLightColors = lightColors(
 
     //Typography and icon colors
     onPrimary        = Color.White,
-    onSecondary      = Color.Black,
+    onSecondary      = Color.White,
     onBackground     = Color.Black,
     onSurface        = Color.Black,
     onError          = Color.White

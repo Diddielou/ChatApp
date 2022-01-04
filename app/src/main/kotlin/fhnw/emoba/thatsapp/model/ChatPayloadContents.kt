@@ -1,5 +1,7 @@
 package fhnw.emoba.thatsapp.model
 
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import org.json.JSONObject
 
 enum class ChatPayloadContents() {
@@ -10,13 +12,17 @@ enum class ChatPayloadContents() {
     LIVE
 }
 
+val DEFAULT_IMAGE = Bitmap.createBitmap(
+    500,
+    500,
+    Bitmap.Config.ALPHA_8).asImageBitmap()
+
 class ChatText(payload: JSONObject){
     val text = payload.getString("body")
 }
 
 class ChatImage(payload: JSONObject){
     val url = payload.getString("url")
-
 }
 
 class ChatLocation(payload: JSONObject){

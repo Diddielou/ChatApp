@@ -21,7 +21,7 @@ import java.util.*
  *
  */
 class MqttConnector (val mqttBroker: String, val maintopic: String,
-                     val qos: MqttQos = MqttQos.EXACTLY_ONCE) {
+                     val qos: MqttQos = MqttQos.AT_LEAST_ONCE) {
 
     private val client = Mqtt5Client.builder()
         .serverHost(mqttBroker)
@@ -29,14 +29,13 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
         .buildAsync()
 
 
-
     fun connectAndSubscribe(
         subtopic: String = "",
         onNewMessageUsers: (ChatUser) -> Unit,
         onError: (exception: Exception, payload: String) -> Unit = { e, _ -> e.printStackTrace() },
         onConnectionFailed: () -> Unit = {},
-        thisUserTopic: String,
-        thisUser: ChatUser,
+        profileUserTopic: String,
+        profileUser: ChatUser,
         thisUserNotificationTopic: String,
         onNewMessages: (ChatMessage) -> Unit,
     ) {
@@ -51,7 +50,7 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
                     //subscribe to users/#
                     subscribe(subtopic, onNewMessageUsers, onError)
                     //publish yourself as user
-                    publishUser(thisUser, thisUserTopic)
+                    publishUser(profileUser, profileUserTopic)
                     //subscribe to your notifications
                     subscribeToMyself(thisUserNotificationTopic, onNewMessages, onError)
                 }
@@ -59,15 +58,17 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
     }
 
 
-    private fun publishUser(thisUser: ChatUser, thisUserTopic: String){
+    private fun publishUser(profileUser: ChatUser,
+                            profileUserTopic: String,
+                            onError: () -> Unit = {  },
+                            onPublished: () -> Unit = { }){
         client.publishWith()
-            .topic(thisUserTopic)
-            .payload(thisUser.asJSON().asPayload())
+            .topic(maintopic+profileUserTopic)
+            .payload(profileUser.asJSON().asPayload())
             .qos(qos)
-            .retain(false)
-            .messageExpiryInterval(60)
+            .retain(true)
+            .messageExpiryInterval(600)
             .send()
-            /*
             .whenComplete{_, throwable ->
                 if(throwable != null){
                     onError.invoke()
@@ -75,21 +76,22 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
                 else {
                     onPublished.invoke()
                 }
-            */
+            }
     }
 
-
+    // auf alle User subscriben
     fun subscribe(subtopic:          String = "",
                   onNewMessageUsers: (ChatUser) -> Unit,
                   onError:           (exception: Exception,
                                      payload: String) -> Unit = { e, _ -> e.printStackTrace() } ){
 
         client.subscribeWith()
-            .topicFilter(maintopic + subtopic)
+            .topicFilter("$maintopic$subtopic#") // main + /users/ + #
             .qos(qos)
             .noLocal(true)
             .callback {
                 try {
+                    // aus was zurückkommt, wird in ein User-Objekt gemacht
                     onNewMessageUsers.invoke(ChatUser(JSONObject(it.payloadAsString())))
                 }
                 catch (e: Exception){
