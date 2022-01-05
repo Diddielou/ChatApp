@@ -55,13 +55,13 @@ fun uploadBitmapToFileIO(bitmap:    Bitmap,
     }
 }
 
-fun downloadBitmapFromFileIO(url:       String,
-                             onSuccess: (bitmap: Bitmap) -> Unit,
-                             onDeleted: () -> Unit = {},
-                             onError:   (exception: Exception) -> Unit) {
+fun downloadBitmapFromURL(url:       String,
+                          onSuccess: (bitmap: Bitmap) -> Unit,
+                          onDeleted: () -> Unit = {},
+                          onError:   (exception: Exception) -> Unit) {
 
     with(URL(url).openConnection() as HttpsURLConnection) {
-        setRequestProperty("User-Agent", "emoba_FileIO_App") //vermeidet den Redirect wie im Browser
+        setRequestProperty("User-Agent", "emoba_Thats_App") //vermeidet den Redirect wie im Browser
         try {
             connect()
         } catch (e: Exception) {
@@ -69,8 +69,8 @@ fun downloadBitmapFromFileIO(url:       String,
         }
         try {
             onSuccess.invoke(bitmap())
-        } catch (e: Exception) {  //das ist nur eine Heuristik: Wenn die Response nicht in ein Bitmap umgewandelt werden kann,
-                                  // dann muss der File wohl inzwischen geloescht worden sein
+        } catch (e: Exception) {
+
             onDeleted.invoke()
         }
     }

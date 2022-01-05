@@ -105,7 +105,7 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
                           onNewMessages: (ChatMessage) -> Unit,
                           onError: (exception: Exception, payload: String) -> Unit) {
         client.subscribeWith()
-            .topicFilter(thisUserNotificationTopic)
+            .topicFilter(maintopic+thisUserNotificationTopic)
             .qos(qos)
             .noLocal(true)
             .callback {

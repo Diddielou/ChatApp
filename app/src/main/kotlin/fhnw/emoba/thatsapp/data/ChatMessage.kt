@@ -5,7 +5,7 @@ import fhnw.emoba.thatsapp.model.*
 import org.json.JSONObject
 
 
-data class ChatMessage(
+data class ChatMessage (
     val messageType: String,
     val timestamp: Long,
     val messageID: String,
@@ -15,7 +15,7 @@ data class ChatMessage(
     var bitmap: Bitmap?,
     var read: Boolean,
     var delivered: Boolean
-    ) {
+) {
 
     constructor(json : JSONObject): this(
         json.getString("messageType"),
@@ -33,63 +33,44 @@ data class ChatMessage(
         return """
             {
             "messageID":  "$messageID", 
-            "timestamp":  "$timestamp", 
+            "timestamp":  $timestamp, 
             "senderID":  "$senderID", 
             "receiverID":  "$receiverID", 
-            "payload":  "$payload", 
+            "payload":  $payload, 
             "messageType":  "$messageType"
             }
-            """
+            """.trimIndent()
     }
 
-    // if publish
-    fun createChatMessage() {
-        when (messageType) {
-            ChatPayloadContents.TEXT.name -> ChatText(payload)
-            ChatPayloadContents.IMAGE.name -> ChatImage(payload)
-            ChatPayloadContents.LOCATION.name -> ChatLocation(payload)
-            ChatPayloadContents.INFO.name -> ChatInfo(payload)
-            else -> {
-                null
+    /*
+    // TODO what is this for?
+    fun createPayloadObject() {
+        try {
+            when (messageType){
+                ChatPayloadContents.TEXT.name -> { ChatText(payload) }
+                ChatPayloadContents.LOCATION.name -> { ChatLocation(payload) }
+                ChatPayloadContents.IMAGE.name -> { ChatImage(payload) }
+                ChatPayloadContents.INFO.name -> { ChatInfo(payload) }
+                ChatPayloadContents.LIVE.name -> { ChatLive(payload) }
             }
+        } catch (e: Exception){
+            System.out.println(e.stackTrace.toString())
+            // TODO catch exception
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+     */
 
     /*
+    fun getPayloadTextData(): ChatText {
+        try {
+            if(messageType == ChatPayloadContents.TEXT.name){
+                ChatText(payload)
+            }
+        } catch (e: Exception){
+
+        }
+    }
     fun getPayloadLocationData(): ChatLocation {
         return if(messageType == ChatPayloadContents.LOCATION.name){
             ChatLocation(payload)
@@ -97,12 +78,10 @@ data class ChatMessage(
             ChatLocation("System: Error")
         }
     }
-
     fun getGeoLocationData(): GeoPosition{
         val location = getPayloadLocationData()
-        return GeoPosition(location.lon.toDouble(), location.lat.toDouble(), 0.0)
+        return GeoPosition(location.longitude.toDouble(), location.latitude.toDouble(), 0.0)
     }
-
     fun getPayloadImageData(): ChatImage{
         return if(messageType == ChatPayloadContents.IMAGE.name){
             ChatImage(payload)
@@ -110,5 +89,8 @@ data class ChatMessage(
             ChatImage("System: Error")
         }
     }
+
      */
+
+
 }

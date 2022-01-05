@@ -37,8 +37,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import fhnw.emoba.thatsapp.model.ChatPayloadContents
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 
+/*
 enum class MessageOption {
     NONE,
     MAP,
@@ -46,16 +48,16 @@ enum class MessageOption {
     PICTURE
 }
 
+ */
+
 @ExperimentalComposeUiApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserInput(
     model: ThatsAppModel,
-    onMessageSent: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var currentMessageOption by rememberSaveable { mutableStateOf(MessageOption.NONE) }
-    val dismissKeyboard = { currentMessageOption = MessageOption.NONE }
+    var currentMessageOption by rememberSaveable { mutableStateOf(ChatPayloadContents.TEXT) }
 
     // Used to decide if the keyboard should be shown
     var textFieldFocusState by remember { mutableStateOf(false) }
@@ -66,53 +68,42 @@ fun UserInput(
                 onOptionChange = { currentMessageOption = it },
                 currentMessageOption = currentMessageOption
             )
-
             OptionExpanded(
-                onTextAdded = { model.message = model.message + it },
+                onTextAdded = { model.messageToSend = model.messageToSend + it },
                 currentMessageOption = currentMessageOption
             )
-
-            Row(
-                Modifier
-                    .fillMaxWidth(),
+            Row(Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
             ) {
                     UserInputText(
-                        messageValue = model.message,
-                        onTextChanged = { model.message = it },
+                        messageValue = model.messageToSend,
+                        onTextChanged = { model.messageToSend = it },
                         // Only show the keyboard if there's no input option and text field has focus
-                        keyboardShown = currentMessageOption == MessageOption.NONE && textFieldFocusState,
                         // Close extended option if text field receives focus
-                        onTextFieldFocused = { focused ->
-                            if (focused) {
-                                currentMessageOption = MessageOption.NONE
+                        onTextFieldFocused =  { focused ->
+                            if (focused && model.messageToSend.isNotEmpty()) {
+                                currentMessageOption = ChatPayloadContents.TEXT
                             }
                             textFieldFocusState = focused
-                        },
-                        focusState = textFieldFocusState
-                    )
-
-                    SendButton(
-                        sendMessageEnabled = model.message.isNotBlank(),
-                        onMessageSent = {
-                            model.publish()
-                            // Reset text field and close keyboard
-                            dismissKeyboard()
                         }
                     )
 
+                    SendButton(
+                        sendMessageEnabled = model.messageToSend.isNotBlank(),
+                        onMessageSent = {
+                            model.currentMessageOptionSend = currentMessageOption
+                            model.publish()
+                        }
+                    )
             }
         }
-
-    //}
 }
 
 
 @Composable
 private fun MessageOptions(
-    onOptionChange: (MessageOption) -> Unit,
-    //sendMessageEnabled: Boolean,
-    currentMessageOption: MessageOption
+    onOptionChange: (ChatPayloadContents) -> Unit,
+    currentMessageOption: ChatPayloadContents
 ) {
     Row(
         modifier = Modifier.height(45.dp),
@@ -120,21 +111,21 @@ private fun MessageOptions(
         horizontalArrangement = Arrangement.Start
     ) {
         InputOptionButton(
-            onClick = { onOptionChange(MessageOption.EMOJI) },
+            onClick = { onOptionChange(ChatPayloadContents.EMOJI) },
             icon = Icons.Outlined.Mood,
-            selected = currentMessageOption == MessageOption.EMOJI,
+            selected = currentMessageOption == ChatPayloadContents.EMOJI,
             description = "Send emoji"
         )
         InputOptionButton(
-            onClick = { onOptionChange(MessageOption.PICTURE) },
+            onClick = { onOptionChange(ChatPayloadContents.IMAGE) },
             icon = Icons.Outlined.InsertPhoto,
-            selected = currentMessageOption == MessageOption.PICTURE,
+            selected = currentMessageOption == ChatPayloadContents.IMAGE,
             description = "Send photo"
         )
         InputOptionButton(
-            onClick = { onOptionChange(MessageOption.MAP) },
+            onClick = { onOptionChange(ChatPayloadContents.LOCATION) },
             icon = Icons.Outlined.Place,
-            selected = currentMessageOption == MessageOption.MAP,
+            selected = currentMessageOption == ChatPayloadContents.LOCATION,
             description = "Send location"
         )
 
@@ -179,26 +170,26 @@ private fun InputOptionButton(
 
 @Composable
 private fun OptionExpanded(
-    currentMessageOption: MessageOption,
+    currentMessageOption: ChatPayloadContents,
     onTextAdded: (String) -> Unit
 ) {
 
-    if (currentMessageOption == MessageOption.NONE) return
+    if (currentMessageOption == ChatPayloadContents.TEXT) return
 
     // Request focus to force the TextField to lose it
     val focusRequester = FocusRequester()
     // If the option is shown, always request focus to trigger a TextField.onFocusChange.
     SideEffect {
-        if (currentMessageOption == MessageOption.EMOJI) {
+        if (currentMessageOption == ChatPayloadContents.EMOJI) {
             focusRequester.requestFocus()
         }
     }
 
     Surface() {
         when (currentMessageOption) {
-            MessageOption.EMOJI -> EmojiOption(onTextAdded, focusRequester)
-            MessageOption.PICTURE -> { }
-            MessageOption.MAP -> { }
+            ChatPayloadContents.EMOJI -> { EmojiOption(onTextAdded, focusRequester) }
+            ChatPayloadContents.IMAGE -> { }
+            ChatPayloadContents.LOCATION -> { }
             else -> {
                 null
             }
@@ -213,9 +204,7 @@ private fun OptionExpanded(
 private fun UserInputText(
     onTextChanged: (String) -> Unit,
     messageValue: String,
-    keyboardShown: Boolean,
     onTextFieldFocused: (Boolean) -> Unit,
-    focusState: Boolean
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
 
@@ -226,7 +215,7 @@ private fun UserInputText(
             onValueChange = { onTextChanged(it) },
             singleLine = false,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
+                keyboardType = KeyboardType.Ascii,
                 imeAction = ImeAction.Send
             ),
             keyboardActions = KeyboardActions(
@@ -289,6 +278,7 @@ fun EmojiOption(
     focusRequester: FocusRequester
 ) {
     Column(
+
         modifier = Modifier
             .focusRequester(focusRequester) // Requests focus when the Emoji option is displayed
             // Make the emoji option focusable so it can steal focus from TextField

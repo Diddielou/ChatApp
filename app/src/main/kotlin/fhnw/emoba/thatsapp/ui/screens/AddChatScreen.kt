@@ -75,8 +75,8 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
         ListItem(
             modifier = Modifier.clickable(onClick = {
                 //model.filterMessagesPerConversation(user)
-                model.currentScreen = Screen.CHAT
                 model.currentChatPartner = user
+                model.currentScreen = Screen.CHAT
             }),
             text = { Text(nickname) },
             secondaryText = { Text("last online: " + model.getLocalDateTimeFromUTCtimestamp(user.lastOnline)) },
@@ -86,7 +86,7 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
     }
 }
 
-
+/*
 @Composable
 fun SmallProfileImage(model: ThatsAppModel, user: ChatUser) {
     if(user.userProfileImage != null){
@@ -100,3 +100,5 @@ fun SmallProfileImage(model: ThatsAppModel, user: ChatUser) {
         Icon(Icons.Filled.AccountCircle, "No profile picture")
     }
 }
+
+ */

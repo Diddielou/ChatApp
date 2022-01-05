@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import org.json.JSONObject
 
 enum class ChatPayloadContents() {
+    NONE,
+    EMOJI,
     TEXT,
     LOCATION,
     IMAGE,
@@ -17,22 +19,90 @@ val DEFAULT_IMAGE = Bitmap.createBitmap(
     500,
     Bitmap.Config.ALPHA_8).asImageBitmap()
 
-class ChatText(payload: JSONObject){
-    val text = payload.getString("body")
+
+
+data class ChatText(
+    val body: String // when sending a message
+) {
+    constructor(payload: JSONObject) : this(
+        payload.getString("body") // when receiving
+    )
+    fun asJSON(): String {
+        return """{
+                 "body": "$body"
+        }""".trimIndent()
+    }
 }
 
-class ChatImage(payload: JSONObject){
-    val url = payload.getString("url")
+data class ChatImage(
+    val url: String
+){
+    constructor(payload: JSONObject) : this(
+        payload.getString("url")
+    )
+    fun asJSON(): String {
+        return """
+            {
+            "url":  "$url", 
+            }
+            """.trimIndent()
+    }
 }
 
-class ChatLocation(payload: JSONObject){
-    val latitude = payload.getString("lat")
-    val longitude = payload.getString("lon")
+data class ChatLocation(
+    val latitude: String, val longitude : String){
+
+    constructor(payload: JSONObject) : this(
+        payload.getString("lat"),
+        payload.getString("lon")
+    )
+
+    fun asJSON(): String {
+        return """
+            {
+            "lat":  "$latitude", 
+            "lon":  "$longitude", 
+            }
+            """.trimIndent()
+    }
 }
 
-class ChatInfo(payload: JSONObject){
-    val messageID = payload.getString("messageID")
-    val timestamp = payload.getString("timestamp")
-    val read = payload.getString("read")
-    val delivered = payload.getString("delivered")
+data class ChatLive(val typing : String){
+
+    constructor(payload: JSONObject) : this(
+        payload.getString("typing")
+    )
+
+    fun asJSON(): String {
+        return """
+            {
+            "typing":  "$typing"
+            }
+            """.trimIndent()
+    }
+}
+
+data class ChatInfo(
+    val messageID : String,
+    val timestamp : String,
+    val read : String,
+    val delivered : String){
+
+    constructor(payload: JSONObject) : this(
+        payload.getString("messageID"),
+        payload.getString("timestamp"),
+        payload.getString("read"),
+        payload.getString("delivered")
+    )
+
+    fun asJSON(): String {
+        return """
+            {
+            "messageID":  "$messageID", 
+            "timestamp":  "$timestamp", 
+            "read":  "$read", 
+            "delivered":  "$delivered", 
+            }
+            """.trimIndent()
+    }
 }

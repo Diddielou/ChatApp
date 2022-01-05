@@ -6,7 +6,7 @@ import android.graphics.Matrix
 import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.ui.graphics.asAndroidBitmap
 import fhnw.emoba.R
 import fhnw.emoba.thatsapp.data.ChatMessage
 import fhnw.emoba.thatsapp.data.ChatUser
@@ -14,7 +14,7 @@ import fhnw.emoba.thatsapp.data.GeoPosition
 import fhnw.emoba.thatsapp.data.connectors.CameraAppConnector
 import fhnw.emoba.thatsapp.data.connectors.GPSConnector
 import fhnw.emoba.thatsapp.data.connectors.MqttConnector
-import fhnw.emoba.thatsapp.data.downloadBitmapFromFileIO
+import fhnw.emoba.thatsapp.data.downloadBitmapFromURL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,7 +37,7 @@ class ThatsAppModel(
     var drawerTitle = "Settings"
 
     // Screen
-    var currentScreen by mutableStateOf(Screen.MAIN)
+    var currentScreen by mutableStateOf(Screen.PROFILE)
 
     // Theme
     var darkTheme by mutableStateOf(false)
@@ -67,28 +67,41 @@ class ThatsAppModel(
     http://www.hivemq.com/demos/websocket-client/
     Subscriptions:
     Get users: fhnw/emoba/thatsapp01cc/users/#
-    Get messages: fhnw/emoba/thatsapp01cc/notification/users/097e25de-3079-4039-b4e0-a7fac9ff2fdc
-    Send texts to me: fhnw/emoba/thatsapp01cc/notification/users/097e25de-3079-4039-b4e0-a7fac9ff2fdc
+    Get messages: fhnw/emoba/thatsapp01cc/notification/users/229abb4a-4fe9-4dfa-a013-594a8fba5bab
+    Send texts to me: fhnw/emoba/thatsapp01cc/notification/users/229abb4a-4fe9-4dfa-a013-594a8fba5bab
+
+    Publish users: fhnw/emoba/thatsapp01cc/users/
+    {
+      "userID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
+      "nickname": "Hansli",
+      "bio": "some interesting text about me",
+      "userImage": "https://oneoffixx.com/wp-content/uploads/logo.png.webp",
+      "lastOnline": 1640095599,
+      "version": "1.0.0"
+    }
+     Receiver: me
+     Sender: Hansli
 
     {
-      "messageID":  "$messageID",
-      "timestamp":  1641296690,
-      "senderID":  "0daffcae-dc4e-4ek9-87ec-9670874a406d",
-      "receiverID": "ce060e4d-1c48-4ba3-a40f-3b961689797b",
-      "payload":  { "body": "Helloo"},
-      "messageType":  "TEXT"
+    "timestamp": 1641296690,
+    "messageID": "c7f29c84-2449-4780-becd-b23ad2991234",
+    "senderID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
+    "receiverID": "229abb4a-4fe9-4dfa-a013-594a8fba5bab",
+    "payload": {
+      "body":"go go Gadgeto send Text"
+    },
+    "messageType": "TEXT"
     }
     */
-
 
     private val mqttConnector by lazy { MqttConnector(mqttBroker, mainTopic) }
     private val soundPlayer by lazy { MediaPlayer.create(context, R.raw.hangouts_message) }
 
     var isLoading by mutableStateOf(false)
-    //var isLoaded by mutableStateOf(false)
 
-    var message by mutableStateOf("")
-    var messageImage by mutableStateOf<Bitmap?>(null)
+    var messageToSend by mutableStateOf("")
+    var messageImageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
+    var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
 
     val allMessages = mutableStateListOf<ChatMessage>()
     var notificationMessage by mutableStateOf("")
@@ -99,6 +112,7 @@ class ThatsAppModel(
 
     /* USERS */
     val allUsers = mutableStateListOf<ChatUser>()
+    val selectedUsers = mutableStateListOf<ChatUser>()
 
     /* PHOTO */
     var photo by mutableStateOf<Bitmap?>(null)
@@ -135,25 +149,23 @@ class ThatsAppModel(
     var profileId by mutableStateOf("")
     var profileName by mutableStateOf("")
     var profileBio by mutableStateOf("")
+    var profileImageURL by mutableStateOf("")
     var profileImagePath by mutableStateOf("")
-    var profilePhoto by mutableStateOf("")
+    var profileImage by mutableStateOf<Bitmap?>(null)
 
     // Preferences auslesen
     fun loadOrCreateProfile(): ChatUser {
         val prefs = context.getSharedPreferences("thatsAppPreferences", MODE_PRIVATE)
-        profileId = prefs.getString("profileID", UUID.randomUUID().toString()).toString()
+        profileId = prefs.getString("profileId", UUID.randomUUID().toString()).toString()
         profileName = prefs.getString("profileName", "yourName").toString()
         profileBio = prefs.getString("profileBio", "Your bio").toString()
-        profileImagePath = prefs.getString(
-            "profileImagePath",
-            "https://pbs.twimg.com/profile_images/1140254399962521601/9hL6tDQj_400x400.jpg"
-        ).toString()
-        profilePhoto =
-            if (profileImagePath != "") {
-                loadImageFromStorage(profileImagePath)
-            } else {
-                profileImagePath
-            }.toString()
+        profileImageURL = prefs.getString("profileImageURL", "https://pbs.twimg.com/profile_images/1140254399962521601/9hL6tDQj_400x400.jpg").toString()
+        profileImagePath = prefs.getString("profileImagePath", "").toString()
+        profileImage = if (profileImagePath.isNotEmpty()) {
+                            loadImageFromStorage(profileImagePath)
+                        } else {
+                            downloadProfileImageFromURL()
+                        }
         val profileVersion = prefs.getString("profileVersion", "1.0.0").toString()
         val profileLastOnline = System.currentTimeMillis() / 1000
         // User zusammenbauen
@@ -161,12 +173,12 @@ class ThatsAppModel(
             userID = profileId,
             nickname = profileName,
             bio = profileBio,
-            userImage = profilePhoto,
+            userImage = profileImageURL,
             userProfileImage = null,
             lastOnline = profileLastOnline,
             version = profileVersion
         )
-
+        updatePrefs();
         return profile
     }
 
@@ -178,8 +190,8 @@ class ThatsAppModel(
         editor.putString("profileId", profileId)
         editor.putString("profileName", profileName)
         editor.putString("profileBio", profileBio)
-        //editor.putString("profileImgUrl", profileImgUrl)
-        //editor.putString("profilePicLocalPath", profilePicLocalPath)
+        editor.putString("profileImageURL", profileImageURL)
+        editor.putString("profileImagePath", profileImagePath)
         editor.apply()
     }
 
@@ -200,13 +212,20 @@ class ThatsAppModel(
         allUsers.add(givenUser)
     }
 
-    /* MESSAGES */
-    fun processMessage(message: ChatMessage) {
-        addChatUser(allUsers.first { user -> user.userID == message.senderID })
 
+    /* PAYLOADS */
+
+
+    /* MESSAGES */
+    // received message
+    fun processMessage(message: ChatMessage) {
         if (message.messageType == ChatPayloadContents.TEXT.name) {
             addMessage(message)
         }
+
+        // When picture: load bitmap from this url > load into ChatMessage.bitmap
+
+        // Loc: create geoLocation
         playSound()
         // TODO: Process LOCATION, INFO, LIVE, IMAGE
     }
@@ -248,9 +267,6 @@ class ThatsAppModel(
     }
 
 
-
-
-
     /**
      * MQTT methods
      */
@@ -268,30 +284,51 @@ class ThatsAppModel(
             profileUserTopic = "$userTopic$profileId",
             thisUserNotificationTopic = "$notificationTopic$profileId",
             onNewMessages = {
-                processMessage(it)
+                processMessage(it) // TODO get payload to receive
             }
         )
     }
 
+    fun buildPayload(){
+    }
+    // TODO change payload to what I actually send
     fun publish() {
+        // build Payload
+        var payloadToSend = JSONObject()
+        var messageTypeToSend = ""
+
+        when (currentMessageOptionSend){
+            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE -> {
+                payloadToSend = JSONObject(ChatText(messageToSend).asJSON())
+                messageTypeToSend = ChatPayloadContents.TEXT.name
+                messageToSend = "" // nur bei text msg
+            }
+            ChatPayloadContents.LOCATION -> {  }
+            ChatPayloadContents.IMAGE -> {  } // show bitmap
+            ChatPayloadContents.INFO -> {  }
+            ChatPayloadContents.LIVE -> {  }
+            else -> { notificationMessage = "Publish failed."  } // TODO (when enough time) set NONE to Text (in GUI and set it here on TEXT)
+        }
+
         val chatMessage = currentChatPartner?.userID?.let {
             ChatMessage(
                 timestamp = getUTCTimestamp(),
                 messageID = UUID.randomUUID().toString(),
                 senderID = profileId,
                 receiverID = it,
-                payload = JSONObject("payload"),
-                messageType = "",
-                bitmap = messageImage,
+                payload = payloadToSend,
+                messageType = messageTypeToSend,
+                bitmap = messageImageToSend,
                 read = false,
                 delivered = false
             )
         }
         if (chatMessage != null) {
+            // dann addMessage hier.
             mqttConnector.publish(
                 message = chatMessage,
                 subtopic = "$notificationTopic${currentChatPartner?.userID}",
-                onPublished = { MessagesPublished++ },
+                onPublished = { addMessage(chatMessage) }, // setMessageSent boolean true (dann im GUI anzeigen)
                 onError = { notificationMessage = "Couldn't publish: ${chatMessage.messageID}" }
             )
         }
@@ -324,15 +361,37 @@ class ThatsAppModel(
 
     fun loadUserListImages() {
         allUsers.forEach {
-            downloadUserImage(it)
+            downloadUserImageFromURL(it)
         }
     }
 
-    /* FILE UPLOAD */
-    fun downloadUserImage(user: ChatUser) {
+    /* UP AND DOWNLOAD FILES */
+
+    /* PROFILE */
+
+    // TODO
+    private fun loadImageFromStorage(profileImagePath: String): Bitmap {
+        return DEFAULT_IMAGE.asAndroidBitmap()
+    }
+
+    fun downloadProfileImageFromURL(): Bitmap? {
+        modelScope.launch {
+            if (profileImageURL.isNotEmpty()) {
+                downloadBitmapFromURL(
+                    url = profileImageURL,
+                    onSuccess = { profileImage = it },
+                    onDeleted = { notificationMessage = "File is deleted" },
+                    onError = { notificationMessage = "Connection failed" })
+                downloadInProgress = false
+            }
+        }
+        return profileImage
+    }
+
+    fun downloadUserImageFromURL(user: ChatUser) {
         modelScope.launch {
             if (user.userImage.isNotBlank()) {
-                downloadBitmapFromFileIO(
+                downloadBitmapFromURL(
                     url = user.userImage,
                     onSuccess = { user.userProfileImage = it },
                     onDeleted = { notificationMessage = "File is deleted" },
@@ -386,13 +445,6 @@ class ThatsAppModel(
         // Convert to LocalDateTime (GMT+1) in String
         val formatter = DateTimeFormatter.ofPattern("dd. MMMM HH:mm")
         return getLocalDateTime(utcTimestamp).format(formatter)
-    }
-
-
-    /* PROFILE */
-    // TODO
-    private fun loadImageFromStorage(profileImagePath: String): Any {
-        return ""
     }
 
 
