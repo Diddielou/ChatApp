@@ -26,30 +26,23 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fhnw.emoba.thatsapp.model.ChatPayloadContents
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 
-/*
-enum class MessageOption {
-    NONE,
-    MAP,
-    EMOJI,
-    PICTURE
-}
-
+/**
+ * Inspired by https://github.com/elye/demo_android_jetchat_with_websocket/blob/main/app/src/main/java/com/example/compose/jetchat/conversation/UserInput.kt
  */
-
 @ExperimentalComposeUiApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -57,7 +50,7 @@ fun UserInput(
     model: ThatsAppModel,
     modifier: Modifier = Modifier,
 ) {
-    var currentMessageOption by rememberSaveable { mutableStateOf(ChatPayloadContents.TEXT) }
+    var currentMessageOption by rememberSaveable { mutableStateOf(ChatPayloadContents.NONE) }
 
     // Used to decide if the keyboard should be shown
     var textFieldFocusState by remember { mutableStateOf(false) }
@@ -66,33 +59,41 @@ fun UserInput(
 
             MessageOptions(
                 onOptionChange = { currentMessageOption = it },
-                currentMessageOption = currentMessageOption
+                currentMessageOption = currentMessageOption,
+                model = model
             )
+
             OptionExpanded(
-                onTextAdded = { model.messageToSend = model.messageToSend + it },
-                currentMessageOption = currentMessageOption
+                onTextAdded = { model.textMessageToSend = model.textMessageToSend + it  },
+                currentMessageOption = currentMessageOption,
+                model = model
             )
+
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
             ) {
                     UserInputText(
-                        messageValue = model.messageToSend,
-                        onTextChanged = { model.messageToSend = it },
+                        messageValue = model.textMessageToSend,
+                        onTextChanged = { model.textMessageToSend = it },
                         // Only show the keyboard if there's no input option and text field has focus
+                        keyboardShown = currentMessageOption == ChatPayloadContents.NONE && textFieldFocusState,
                         // Close extended option if text field receives focus
                         onTextFieldFocused =  { focused ->
-                            if (focused && model.messageToSend.isNotEmpty()) {
-                                currentMessageOption = ChatPayloadContents.TEXT
+                            if (focused) {
+                                currentMessageOption = ChatPayloadContents.NONE
                             }
                             textFieldFocusState = focused
-                        }
+                        },
                     )
-
+                    // TODO Keyboard bug
                     SendButton(
-                        sendMessageEnabled = model.messageToSend.isNotBlank(),
-                        onMessageSent = {
+                        sendMessageEnabled =
+                            model.textMessageToSend.isNotEmpty() ||
+                            model.imageMessageToSend != null,
+                        onMessageSend = {
                             model.currentMessageOptionSend = currentMessageOption
-                            model.publish()
+                            model.prePublish()
+                            currentMessageOption = ChatPayloadContents.NONE
                         }
                     )
             }
@@ -103,10 +104,11 @@ fun UserInput(
 @Composable
 private fun MessageOptions(
     onOptionChange: (ChatPayloadContents) -> Unit,
-    currentMessageOption: ChatPayloadContents
+    currentMessageOption: ChatPayloadContents,
+    model: ThatsAppModel
 ) {
     Row(
-        modifier = Modifier.height(45.dp),
+        modifier = Modifier.height(45.dp).padding(top = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -117,7 +119,10 @@ private fun MessageOptions(
             description = "Send emoji"
         )
         InputOptionButton(
-            onClick = { onOptionChange(ChatPayloadContents.IMAGE) },
+            onClick = {
+                onOptionChange(ChatPayloadContents.IMAGE)
+                model.takePhoto()
+             },
             icon = Icons.Outlined.InsertPhoto,
             selected = currentMessageOption == ChatPayloadContents.IMAGE,
             description = "Send photo"
@@ -128,7 +133,6 @@ private fun MessageOptions(
             selected = currentMessageOption == ChatPayloadContents.LOCATION,
             description = "Send location"
         )
-
     }
 }
 
@@ -143,7 +147,7 @@ private fun InputOptionButton(
     val backgroundModifier = if (selected) {
         Modifier.background(
             color = MaterialTheme.colors.secondary.copy(alpha = 0.15f),
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(25.dp)
         )
     } else {
         Modifier
@@ -171,32 +175,93 @@ private fun InputOptionButton(
 @Composable
 private fun OptionExpanded(
     currentMessageOption: ChatPayloadContents,
-    onTextAdded: (String) -> Unit
+    onTextAdded: (String) -> Unit,
+    model: ThatsAppModel
 ) {
 
-    if (currentMessageOption == ChatPayloadContents.TEXT) return
+    if (currentMessageOption == ChatPayloadContents.TEXT || currentMessageOption == ChatPayloadContents.NONE) return
 
     // Request focus to force the TextField to lose it
     val focusRequester = FocusRequester()
     // If the option is shown, always request focus to trigger a TextField.onFocusChange.
     SideEffect {
-        if (currentMessageOption == ChatPayloadContents.EMOJI) {
+        if (currentMessageOption == ChatPayloadContents.EMOJI ||
+            currentMessageOption == ChatPayloadContents.IMAGE) {
             focusRequester.requestFocus()
         }
     }
-
     Surface() {
         when (currentMessageOption) {
             ChatPayloadContents.EMOJI -> { EmojiOption(onTextAdded, focusRequester) }
-            ChatPayloadContents.IMAGE -> { }
-            ChatPayloadContents.LOCATION -> { }
-            else -> {
-                null
+            ChatPayloadContents.IMAGE -> { ImageOption(model, focusRequester) }
+            ChatPayloadContents.LOCATION -> { LocationOption(model, focusRequester) }
+        }
+    }
+}
+
+
+/* OPTIONS */
+@Composable
+fun EmojiOption(
+    onTextAdded: (String) -> Unit,
+    focusRequester: FocusRequester
+) {
+    Column(
+        modifier = Modifier
+            .focusRequester(focusRequester) // Requests focus when the Emoji option is displayed
+            // Make the emoji option focusable so it can steal focus from TextField
+            .focusTarget()
+    ) {
+        // TODO Scrolling right doesn't work
+        Row(modifier = Modifier.verticalScroll(rememberScrollState())) {
+            EmojiTable(
+                onTextAdded,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun ImageOption(
+    model: ThatsAppModel,
+    focusRequester: FocusRequester
+) {
+    Column(
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .focusTarget()
+    ) {
+        Row() {
+            if(model.imageMessageToSend != null){
+                Image(bitmap = model.imageMessageToSend!!.asImageBitmap(),
+                    contentDescription = "Image to send",
+                    modifier = Modifier.size(150.dp)
+                )
             }
         }
     }
 }
 
+
+@Composable
+fun LocationOption(
+    model: ThatsAppModel,
+    focusRequester: FocusRequester
+) {
+    Column(
+        modifier = Modifier
+            .focusRequester(focusRequester)
+            .focusTarget()
+    ) {
+        Row() {
+
+        }
+    }
+}
+
+val KeyboardShownKey = SemanticsPropertyKey<Boolean>("KeyboardShownKey")
+var SemanticsPropertyReceiver.keyboardShownProperty by KeyboardShownKey
 
 @ExperimentalComposeUiApi
 @ExperimentalFoundationApi
@@ -205,10 +270,13 @@ private fun UserInputText(
     onTextChanged: (String) -> Unit,
     messageValue: String,
     onTextFieldFocused: (Boolean) -> Unit,
+    keyboardShown: Boolean
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
 
-    Column() {
+    Column(Modifier.semantics {
+        keyboardShownProperty = keyboardShown
+    }) {
         var lastFocusState by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = messageValue,
@@ -239,7 +307,7 @@ private fun UserInputText(
 @Composable
 private fun SendButton(
     sendMessageEnabled: Boolean,
-    onMessageSent: () -> Unit
+    onMessageSend: () -> Unit
 ){
     // Send button
     Column() {
@@ -253,7 +321,7 @@ private fun SendButton(
                     shape = CircleShape
                 ),
             enabled = sendMessageEnabled,
-            onClick = onMessageSent
+            onClick = onMessageSend
         ) {
             val tint = if (sendMessageEnabled) {
                 MaterialTheme.colors.secondary
@@ -271,29 +339,7 @@ private fun SendButton(
 }
 
 
-/* OPTIONS */
-@Composable
-fun EmojiOption(
-    onTextAdded: (String) -> Unit,
-    focusRequester: FocusRequester
-) {
-    Column(
-
-        modifier = Modifier
-            .focusRequester(focusRequester) // Requests focus when the Emoji option is displayed
-            // Make the emoji option focusable so it can steal focus from TextField
-            .focusTarget()
-    ) {
-        Row(modifier = Modifier.verticalScroll(rememberScrollState())) {
-            EmojiTable(
-                onTextAdded,
-                modifier = Modifier.padding(8.dp)
-            )
-        }
-    }
-}
-
-
+/* FURTHER */
 @Composable
 private fun EmojiTable(
     onTextAdded: (String) -> Unit,
@@ -310,7 +356,7 @@ private fun EmojiTable(
                     Text(
                         modifier = Modifier
                             .clickable(onClick = { onTextAdded(emoji) })
-                            .sizeIn(minWidth = 42.dp, minHeight = 42.dp) // TODO
+                            .sizeIn(minWidth = 45.dp, minHeight = 45.dp) // TODO
                             .padding(8.dp),
                         text = emoji,
                         style = LocalTextStyle.current.copy(

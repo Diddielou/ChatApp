@@ -1,11 +1,13 @@
 package fhnw.emoba.thatsapp.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
@@ -17,6 +19,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import fhnw.emoba.thatsapp.data.ChatUser
@@ -120,15 +124,20 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
 
 @Composable
 fun SmallProfileImage(model: ThatsAppModel, user: ChatUser) {
+    val imageModifier = Modifier
+        .size(50.dp)
+        .clip(CircleShape)
+        .border(1.dp, Color.Transparent, CircleShape)
+
     if(user.userProfileImage != null){
         Image(
             bitmap = user.userProfileImage!!.asImageBitmap(),
             contentDescription = "Profile image",
-            modifier = Modifier.size(50.dp)
+            modifier = imageModifier
         )
     }
     else {
-        Icon(Icons.Filled.AccountCircle, "No profile picture")
+        Icon(Icons.Filled.AccountCircle, "No profile picture", Modifier.size(50.dp))
     }
 }
 

@@ -43,7 +43,7 @@ data class ChatImage(
     fun asJSON(): String {
         return """
             {
-            "url":  "$url", 
+            "url":  "$url"
             }
             """.trimIndent()
     }
@@ -61,7 +61,7 @@ data class ChatLocation(
         return """
             {
             "lat":  "$latitude", 
-            "lon":  "$longitude", 
+            "lon":  "$longitude"
             }
             """.trimIndent()
     }
@@ -101,7 +101,7 @@ data class ChatInfo(
             "messageID":  "$messageID", 
             "timestamp":  "$timestamp", 
             "read":  "$read", 
-            "delivered":  "$delivered", 
+            "delivered":  "$delivered"
             }
             """.trimIndent()
     }

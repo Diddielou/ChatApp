@@ -42,24 +42,6 @@ data class ChatMessage (
             """.trimIndent()
     }
 
-    /*
-    // TODO what is this for?
-    fun createPayloadObject() {
-        try {
-            when (messageType){
-                ChatPayloadContents.TEXT.name -> { ChatText(payload) }
-                ChatPayloadContents.LOCATION.name -> { ChatLocation(payload) }
-                ChatPayloadContents.IMAGE.name -> { ChatImage(payload) }
-                ChatPayloadContents.INFO.name -> { ChatInfo(payload) }
-                ChatPayloadContents.LIVE.name -> { ChatLive(payload) }
-            }
-        } catch (e: Exception){
-            System.out.println(e.stackTrace.toString())
-            // TODO catch exception
-        }
-    }
-
-     */
 
     /*
     fun getPayloadTextData(): ChatText {

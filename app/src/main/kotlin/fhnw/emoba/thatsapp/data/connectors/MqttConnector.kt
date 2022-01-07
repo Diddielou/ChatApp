@@ -17,8 +17,6 @@ import java.util.*
  * Ein generischer Mqtt-Client (gut um Messages zu kontrollieren)
  * http://www.hivemq.com/demos/websocket-client/
  *
- * TODO: check sessionExpiryInterval(<seconds>) / Check uuid (in model?) / Check persistent sessions
- *
  */
 class MqttConnector (val mqttBroker: String, val maintopic: String,
                      val qos: MqttQos = MqttQos.AT_LEAST_ONCE) {

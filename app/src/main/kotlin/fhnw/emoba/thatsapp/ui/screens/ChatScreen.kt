@@ -1,11 +1,9 @@
 package fhnw.emoba.thatsapp.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -22,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,7 +32,7 @@ import fhnw.emoba.thatsapp.model.*
 import fhnw.emoba.thatsapp.ui.UserInput
 import kotlinx.coroutines.launch
 
-
+// TODO: Profile picture on right hand side of TopAppBar
 @ExperimentalComposeUiApi
 @Composable
 fun ChatScreen(model: ThatsAppModel) {
@@ -74,7 +73,7 @@ private fun Body(model: ThatsAppModel) {
             AllMessagesList(model, Modifier.constrainAs(allMessagesPanel) {
                 width = Dimension.fillToConstraints
                 height = Dimension.fillToConstraints
-                top.linkTo(parent.top, 5.dp)
+                top.linkTo(parent.top, 10.dp)
                 start.linkTo(parent.start, 10.dp)
                 end.linkTo(parent.end, 10.dp)
                 bottom.linkTo(messageField.top)
@@ -93,7 +92,6 @@ private fun Body(model: ThatsAppModel) {
 
 @Composable
 private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
-    // TODO cannot receive or deliver messages > ChatScreen
     val messagesInThisChat =
         model.currentChatPartner?.let { model.filterMessagesPerConversation(it) }
 
@@ -108,7 +106,7 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
             OnScreenMessage("No messages yet.")
         } else {
             val scrollState = rememberLazyListState()
-            LazyColumn(state = scrollState) {
+            LazyColumn(state = scrollState, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(messagesInThisChat) {
                    MessageRow(it, model)
                 }
@@ -125,29 +123,41 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
-    val modifierMyMessage = Modifier.background(
-        color = MaterialTheme.colors.secondary.copy(alpha = 0.15f),
-        shape = RoundedCornerShape(15.dp)
-    ).padding(0.dp, 5.dp, 0.dp, 5.dp).border(5.dp, Color.White)
-    val modifierForeignMessage = Modifier.background(
-        color = MaterialTheme.colors.primary.copy(alpha = 0.15f),
-        shape = RoundedCornerShape(15.dp)
-    ).padding(0.dp, 5.dp, 0.dp, 5.dp)
+
+    val modifierMyMessage = Modifier
+        .background(
+            color = MaterialTheme.colors.secondary.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(10.dp)
+        )
+        .padding(10.dp, 5.dp, 5.dp, 10.dp)
+
+
+    val modifierForeignMessage = Modifier
+        .background(
+            color = MaterialTheme.colors.primary.copy(alpha = 0.15f),
+            shape = RoundedCornerShape(10.dp)
+        )
+        .padding(10.dp, 5.dp, 5.dp, 10.dp)
 
     with(chatMessage) {
         when (messageType){
             ChatPayloadContents.TEXT.name -> {
-                val chatText = ChatText(chatMessage.payload)
-
-                if(chatMessage.senderID == model.profileId){ // message from profile
-                    ListItem(text = { Text(chatText.body, fontWeight = FontWeight.Normal) }, modifier = modifierMyMessage) // textAlign = TextAlign.End,
-                }
-                else { // message from currentChatPartner
-                    ListItem(text = { Text(chatText.body) }, modifier = modifierForeignMessage)
-                }
+                val chatText = ChatText(payload)
+                ChatRow(chatMessage = chatMessage, model = model,
+                    modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
+                    rowContent = { Text(text = chatText.body, fontWeight = FontWeight.Normal) }
+                )
             }
-            ChatPayloadContents.LOCATION.name -> {  }
-            ChatPayloadContents.IMAGE.name -> {  } // show bitmap
+            ChatPayloadContents.IMAGE.name -> {
+                ChatRow(chatMessage = chatMessage, model = model,
+                    modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
+                    rowContent = { Image(
+                        bitmap = chatMessage.bitmap!!.asImageBitmap(),
+                        contentDescription = "Sent Image",
+                        modifier = Modifier.size(100.dp)) }
+                )
+            }
+            ChatPayloadContents.LOCATION.name -> { }
             ChatPayloadContents.INFO.name -> {  }
             ChatPayloadContents.LIVE.name -> { }
         }
@@ -155,11 +165,39 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
     }
 }
 
+@Composable
+fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
+            modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
+
+    if(chatMessage.senderID == model.profileId) { // message from profile
+        Column(
+            modifier = Modifier
+                .padding(start = 25.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Top
+        ) {
+
+            Row(modifierSelf.fillMaxSize()) {
+                rowContent()
+            }
+        }
+    }
+    else { // message from currentChatPartner
+        Column(modifier = Modifier
+            .padding(end = 25.dp)
+            .fillMaxSize(), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.Top ) {
+            Row(modifierForeign.fillMaxSize()){
+                rowContent()
+            }
+        }
+    }
+}
 
 @ExperimentalComposeUiApi
 @Composable
 private fun MessageArea(model: ThatsAppModel, modifier: Modifier) {
-    UserInput(model = model,  modifier = modifier) // onMessageSent = { model.messageToSend },
+    UserInput(model = model,  modifier = modifier)
 }
 
 

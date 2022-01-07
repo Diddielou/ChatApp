@@ -7,14 +7,12 @@ import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.asAndroidBitmap
+import com.hivemq.client.internal.mqtt.util.MqttChecks.publish
 import fhnw.emoba.R
-import fhnw.emoba.thatsapp.data.ChatMessage
-import fhnw.emoba.thatsapp.data.ChatUser
-import fhnw.emoba.thatsapp.data.GeoPosition
+import fhnw.emoba.thatsapp.data.*
 import fhnw.emoba.thatsapp.data.connectors.CameraAppConnector
 import fhnw.emoba.thatsapp.data.connectors.GPSConnector
 import fhnw.emoba.thatsapp.data.connectors.MqttConnector
-import fhnw.emoba.thatsapp.data.downloadBitmapFromURL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -37,7 +35,7 @@ class ThatsAppModel(
     var drawerTitle = "Settings"
 
     // Screen
-    var currentScreen by mutableStateOf(Screen.PROFILE)
+    var currentScreen by mutableStateOf(Screen.MAIN)
 
     // Theme
     var darkTheme by mutableStateOf(false)
@@ -99,13 +97,13 @@ class ThatsAppModel(
 
     var isLoading by mutableStateOf(false)
 
-    var messageToSend by mutableStateOf("")
-    var messageImageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
     var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
+    var textMessageToSend by mutableStateOf("")
+    var imageMessageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
 
     val allMessages = mutableStateListOf<ChatMessage>()
     var notificationMessage by mutableStateOf("")
-    var MessagesPublished by mutableStateOf(0)
+    var messagesPublished by mutableStateOf(0)
 
     /* CHAT PARTNERS */
     var currentChatPartner by mutableStateOf<ChatUser?>(null)
@@ -137,10 +135,10 @@ class ThatsAppModel(
     }
 
     /* FILE UPLOAD */
-    var fileioURL by mutableStateOf<String?>(null)
+    var fileURLToSend by mutableStateOf<String?>(null)
     var uploadInProgress by mutableStateOf(false)
 
-    var downloadedFile by mutableStateOf<Bitmap?>(null)
+    //var downloadedFile by mutableStateOf<Bitmap?>(null)
     var downloadInProgress by mutableStateOf(false)
     //var downloadMessage by mutableStateOf("")
 
@@ -183,7 +181,6 @@ class ThatsAppModel(
     }
 
     // Prefs speichern
-    // TODO aufrufen im UI
     fun updatePrefs() {
         val prefs = context.getSharedPreferences("thatsAppPreferences", MODE_PRIVATE)
         val editor = prefs.edit()
@@ -208,7 +205,6 @@ class ThatsAppModel(
         if(existingUser != null){
             allUsers.remove(existingUser)
         }
-
         allUsers.add(givenUser)
     }
 
@@ -217,24 +213,147 @@ class ThatsAppModel(
 
 
     /* MESSAGES */
-    // received message
+    // received messages
     fun processMessage(message: ChatMessage) {
         if (message.messageType == ChatPayloadContents.TEXT.name) {
             addMessage(message)
         }
-
-        // When picture: load bitmap from this url > load into ChatMessage.bitmap
-
+        if (message.messageType == ChatPayloadContents.IMAGE.name) {
+            val chatImageURL = ChatImage(message.payload).url
+            getMessageImage(chatImageURL, message)
+            addMessage(message)
+        }
         // Loc: create geoLocation
         playSound()
         // TODO: Process LOCATION, INFO, LIVE, IMAGE
     }
 
-    fun addMessage(message: ChatMessage) {
+    private fun addMessage(message: ChatMessage) {
         allMessages.add(message)
     }
 
+    fun getMessageImage(chatImageURL: String, message: ChatMessage) {
+        modelScope.launch {
+            if (chatImageURL.isNotEmpty()) {
+                downloadBitmapFromURL(
+                    url = chatImageURL,
+                    onSuccess = { message.bitmap = it },
+                    onDeleted = { notificationMessage = "Image is deleted" },
+                    onError = { notificationMessage = "Connection failed" })
+                downloadInProgress = false
+            }
+        }
+    }
 
+
+    /**
+     * MQTT methods
+     */
+    fun connectAndSubscribe() {
+        mqttConnector.connectAndSubscribe(
+            subtopic = userTopic,
+            onNewMessageUsers = {
+                addOrUpdateUserList(it)
+            },
+            onError = { _, p ->
+                notificationMessage = p
+                playSound()
+            },
+            profileUser = loadOrCreateProfile(),
+            profileUserTopic = "$userTopic$profileId",
+            thisUserNotificationTopic = "$notificationTopic$profileId",
+            onNewMessages = {
+                processMessage(it) // TODO get payload to receive
+            }
+        )
+    }
+
+    fun prePublish(){
+        when (currentMessageOptionSend){
+            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE -> {
+                publish()
+            }
+            ChatPayloadContents.IMAGE -> {
+                uploadImageToFileIO()
+            }
+        }
+    }
+
+
+    // TODO change payload to what I actually send
+    fun publish() {
+        // build Payload
+        var payloadToSend = JSONObject()
+        var messageTypeToSend = ""
+
+        when (currentMessageOptionSend){
+            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE -> {
+                payloadToSend = JSONObject(ChatText(textMessageToSend).asJSON())
+                messageTypeToSend = ChatPayloadContents.TEXT.name
+                textMessageToSend = ""
+            }
+            ChatPayloadContents.IMAGE -> {
+                payloadToSend = JSONObject(ChatImage(fileURLToSend!!).asJSON())
+                messageTypeToSend = ChatPayloadContents.IMAGE.name
+                fileURLToSend = null
+            } // show bitmap
+            ChatPayloadContents.LOCATION -> { }
+            ChatPayloadContents.INFO -> {  }
+            ChatPayloadContents.LIVE -> {  }
+            else -> { notificationMessage = "Publish failed."  } // TODO (when enough time) set NONE to Text (in GUI and set it here on TEXT)
+        }
+
+        val chatMessage = currentChatPartner?.userID?.let {
+            ChatMessage(
+                timestamp = getUTCTimestamp(),
+                messageID = UUID.randomUUID().toString(),
+                senderID = profileId,
+                receiverID = it,
+                payload = payloadToSend,
+                messageType = messageTypeToSend,
+                bitmap = imageMessageToSend,
+                read = false,
+                delivered = false
+            )
+        }
+        imageMessageToSend = null
+        if (chatMessage != null) {
+            // dann addMessage hier.
+            mqttConnector.publish(
+                message = chatMessage,
+                subtopic = "$notificationTopic${currentChatPartner?.userID}",
+                onPublished = { addMessage(chatMessage) }, // setMessageSent boolean true (dann im GUI anzeigen)
+                onError = { notificationMessage = "Couldn't publish: ${chatMessage.messageID}" }
+            )
+        }
+    }
+
+    /* NOTIFICATION */
+    private fun playSound() {
+        soundPlayer.seekTo(0)
+        soundPlayer.start()
+    }
+
+    /* PHOTO */
+    fun takePhoto() {
+        cameraAppConnector.getBitmap(
+            onSuccess = { imageMessageToSend = it },
+            onCanceled = { notificationMessage = "Aborted sending image." })
+    }
+
+    fun rotatePhoto() {
+        photo?.let { modelScope.launch { photo = photo!!.rotate(90f) } }
+    }
+
+    private fun Bitmap.rotate(degrees: Float): Bitmap {
+        val matrix = Matrix().apply {
+            postRotate(degrees)
+        }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+    }
+
+
+    /* USERS */
 
     /*
     Notes
@@ -266,99 +385,6 @@ class ThatsAppModel(
         return tempList.filter { a -> a.receiverID == givenUser.userID }
     }
 
-
-    /**
-     * MQTT methods
-     */
-    fun connectAndSubscribe() {
-        mqttConnector.connectAndSubscribe(
-            subtopic = userTopic,
-            onNewMessageUsers = {
-                addOrUpdateUserList(it)
-            },
-            onError = { _, p ->
-                notificationMessage = p
-                playSound()
-            },
-            profileUser = loadOrCreateProfile(),
-            profileUserTopic = "$userTopic$profileId",
-            thisUserNotificationTopic = "$notificationTopic$profileId",
-            onNewMessages = {
-                processMessage(it) // TODO get payload to receive
-            }
-        )
-    }
-
-    fun buildPayload(){
-    }
-    // TODO change payload to what I actually send
-    fun publish() {
-        // build Payload
-        var payloadToSend = JSONObject()
-        var messageTypeToSend = ""
-
-        when (currentMessageOptionSend){
-            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE -> {
-                payloadToSend = JSONObject(ChatText(messageToSend).asJSON())
-                messageTypeToSend = ChatPayloadContents.TEXT.name
-                messageToSend = "" // nur bei text msg
-            }
-            ChatPayloadContents.LOCATION -> {  }
-            ChatPayloadContents.IMAGE -> {  } // show bitmap
-            ChatPayloadContents.INFO -> {  }
-            ChatPayloadContents.LIVE -> {  }
-            else -> { notificationMessage = "Publish failed."  } // TODO (when enough time) set NONE to Text (in GUI and set it here on TEXT)
-        }
-
-        val chatMessage = currentChatPartner?.userID?.let {
-            ChatMessage(
-                timestamp = getUTCTimestamp(),
-                messageID = UUID.randomUUID().toString(),
-                senderID = profileId,
-                receiverID = it,
-                payload = payloadToSend,
-                messageType = messageTypeToSend,
-                bitmap = messageImageToSend,
-                read = false,
-                delivered = false
-            )
-        }
-        if (chatMessage != null) {
-            // dann addMessage hier.
-            mqttConnector.publish(
-                message = chatMessage,
-                subtopic = "$notificationTopic${currentChatPartner?.userID}",
-                onPublished = { addMessage(chatMessage) }, // setMessageSent boolean true (dann im GUI anzeigen)
-                onError = { notificationMessage = "Couldn't publish: ${chatMessage.messageID}" }
-            )
-        }
-    }
-
-    /* NOTIFICATION */
-    private fun playSound() {
-        soundPlayer.seekTo(0)
-        soundPlayer.start()
-    }
-
-
-    /* PHOTO */
-    fun takePhoto() {
-        cameraAppConnector.getBitmap(onSuccess = { photo = it },
-            onCanceled = { notificationMessage = "Kein neues Bild" })
-    }
-
-    fun rotatePhoto() {
-        photo?.let { modelScope.launch { photo = photo!!.rotate(90f) } }
-    }
-
-    private fun Bitmap.rotate(degrees: Float): Bitmap {
-        val matrix = Matrix().apply {
-            postRotate(degrees)
-        }
-        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
-    }
-
-
     fun loadUserListImages() {
         allUsers.forEach {
             downloadUserImageFromURL(it)
@@ -367,12 +393,20 @@ class ThatsAppModel(
 
     /* UP AND DOWNLOAD FILES */
 
-    /* PROFILE */
-
-    // TODO
-    private fun loadImageFromStorage(profileImagePath: String): Bitmap {
-        return DEFAULT_IMAGE.asAndroidBitmap()
+    private fun uploadImageToFileIO() {
+        modelScope.launch {
+            if (imageMessageToSend != null) {
+                uploadBitmapToFileIO(
+                    bitmap = imageMessageToSend!!,
+                    onSuccess = { fileURLToSend = it
+                        publish() },
+                    onError = { int, _ -> notificationMessage = "$int: Could not upload image from URL." }
+                )
+                uploadInProgress = true
+            }
+        }
     }
+
 
     fun downloadProfileImageFromURL(): Bitmap? {
         modelScope.launch {
@@ -401,9 +435,12 @@ class ThatsAppModel(
         }
     }
 
-    fun getMessageImage() {
-
+    // TODO
+    private fun loadImageFromStorage(profileImagePath: String): Bitmap {
+        return DEFAULT_IMAGE.asAndroidBitmap()
     }
+
+    /* PROFILE */
 
 
     /* Help methods: Unix Timestamps */
