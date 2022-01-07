@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -29,14 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import fhnw.emoba.freezerapp.ui.theme.gray300
 import fhnw.emoba.thatsapp.data.ChatMessage
 import fhnw.emoba.thatsapp.data.GeoPosition
 import fhnw.emoba.thatsapp.model.*
 import fhnw.emoba.thatsapp.ui.UserInput
 import kotlinx.coroutines.launch
 
-// TODO: Profile picture on right hand side of TopAppBar
 @ExperimentalComposeUiApi
 @Composable
 fun ChatScreen(model: ThatsAppModel) {
@@ -44,7 +41,7 @@ fun ChatScreen(model: ThatsAppModel) {
     val title = Screen.CHAT.title + (model.currentChatPartner!!.nickname)
 
     Scaffold(scaffoldState = scaffoldState,
-        topBar = { ChatTopBar(model, title, Screen.MAIN, scaffoldState) },
+        topBar = { ChatTopBar(model, title, Screen.MAIN) },
         snackbarHost = { NotificationHost(it) },
         content = { Body(model) }
     )
@@ -52,11 +49,18 @@ fun ChatScreen(model: ThatsAppModel) {
 }
 
 @Composable
-fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldState: ScaffoldState) {
-    val scope = rememberCoroutineScope()
+fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen) {
     with(model) {
         TopAppBar(
-            title = { Heading3(text = title) },
+            title = {
+                Row(Modifier.width(305.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Heading3(text = title)
+                    ProfileImage(currentChatPartner!!, 45)
+                }
+            },
             navigationIcon = {
                 IconButton(onClick = { currentScreen = screen }) {
                     Icon(Icons.Filled.ArrowBack, "Back")

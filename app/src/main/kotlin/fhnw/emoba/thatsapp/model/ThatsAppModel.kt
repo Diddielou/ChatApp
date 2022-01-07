@@ -239,7 +239,7 @@ class ThatsAppModel(
             message.position = geoPosition
             addMessage(message)
         }
-        // Loc: create geoLocation
+
         playSound()
         // TODO: Process INFO, LIVE, IMAGE
     }
@@ -292,14 +292,6 @@ class ThatsAppModel(
             ChatPayloadContents.IMAGE -> {
                 uploadImageToFileIO()
             }
-            /*
-            ChatPayloadContents.LOCATION -> {
-                if(locationMessageToSend != null) {
-                    publish()
-                }
-            }
-
-             */
         }
     }
 

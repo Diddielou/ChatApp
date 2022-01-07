@@ -1,16 +1,24 @@
 package fhnw.emoba.thatsapp.ui.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 
@@ -29,7 +37,27 @@ fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldS
     }
 }
 
-/* MESSAGES */
+/* PROFILE IMAGE */
+@Composable
+public fun ProfileImage(user: ChatUser, size: Int) {
+    val imageModifier = Modifier
+        .size(size.dp)
+        .clip(CircleShape)
+        .border(1.dp, Color.Transparent, CircleShape)
+
+    if(user.userProfileImage != null){
+        Image(
+            bitmap = user.userProfileImage!!.asImageBitmap(),
+            contentDescription = "Profile image",
+            modifier = imageModifier
+        )
+    }
+    else {
+        Icon(Icons.Filled.AccountCircle, "No profile picture", Modifier.size(size.dp))
+    }
+}
+
+/* NOTIFICATIONS */
 @Composable
 public fun NotificationHost(state: SnackbarHostState) {
     SnackbarHost(state) { data ->
@@ -57,24 +85,29 @@ public fun Notification(model: ThatsAppModel, scaffoldState: ScaffoldState) {
     }
 }
 
+/* APP BEHAVIOUR */
 @Composable
 fun LoadingIndicator(isLoading: Boolean = true) {
     CircularProgressIndicator(modifier = Modifier.size(30.dp))
 }
 
 @Composable
-fun OnScreenMessage(message: String){
+fun OnScreenMessage(message: String) {
     Column(
         modifier = Modifier.fillMaxWidth().fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(text = message,
+        Text(
+            text = message,
             style = MaterialTheme.typography.subtitle1,
-            color = MaterialTheme.colors.secondary)
+            color = MaterialTheme.colors.secondary
+        )
     }
 }
 
+
+/* STYLES */
 @Composable
 fun Heading1(text: String){
     Text(text = text,
@@ -102,4 +135,5 @@ fun Heading3(text: String){
         overflow = TextOverflow.Ellipsis,
         maxLines = 1)
 }
+
 
