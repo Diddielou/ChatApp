@@ -7,7 +7,6 @@ import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.asAndroidBitmap
-import com.hivemq.client.internal.mqtt.util.MqttChecks.publish
 import fhnw.emoba.R
 import fhnw.emoba.thatsapp.data.*
 import fhnw.emoba.thatsapp.data.connectors.CameraAppConnector
@@ -82,14 +81,27 @@ class ThatsAppModel(
 
     {
     "timestamp": 1641296690,
-    "messageID": "c7f29c84-2449-4780-becd-b23ad2991234",
+    "messageID": "c7f29c84-2449-4780-becd-b23ad2991266",
     "senderID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
     "receiverID": "229abb4a-4fe9-4dfa-a013-594a8fba5bab",
     "payload": {
-      "body":"go go Gadgeto send Text"
+      "body":"Thanks!"
     },
     "messageType": "TEXT"
-    }
+}
+
+    {
+    "timestamp": 1640095516,
+    "messageID": "c7f29c84-2449-4780-becd-b23ad2991134",
+    "senderID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
+    "receiverID": "229abb4a-4fe9-4dfa-a013-594a8fba5bab",
+    "payload": {
+      "lat": 42.831703395,
+      "lon": 3.566797316
+    },
+    "messageType": "LOCATION"
+  }
+
     */
 
     private val mqttConnector by lazy { MqttConnector(mqttBroker, mainTopic) }
@@ -103,35 +115,33 @@ class ThatsAppModel(
 
     val allMessages = mutableStateListOf<ChatMessage>()
     var notificationMessage by mutableStateOf("")
-    var messagesPublished by mutableStateOf(0)
 
     /* CHAT PARTNERS */
     var currentChatPartner by mutableStateOf<ChatUser?>(null)
 
     /* USERS */
     val allUsers = mutableStateListOf<ChatUser>()
-    val selectedUsers = mutableStateListOf<ChatUser>()
 
     /* PHOTO */
     var photo by mutableStateOf<Bitmap?>(null)
 
     /* LOCATION */
-    val chatLocations = mutableStateListOf<GeoPosition>()
+    // TODO
+    var locationMessageToSend by mutableStateOf<GeoPosition?>(null) // bleibt nur bei mir
 
-    // asynchroner Aufruf
-    fun rememberCurrentPosition() {
-        //modelScope.launch { // Code wird jetzt im UI /main Thread ausgeführt
+
+    // Publish current position
+    fun saveCurrentPosition() {
+        isLoading = true
         locator.getLocation(onSuccess = {
-            chatLocations.add(it)
-            notificationMessage = "neuer Wegpunkt"
-            // open location in GoogleMaps...
+            locationMessageToSend = it
+            isLoading = false
         },
-            onFailure = {}, //todo: was machen wir?
+            onFailure = { notificationMessage = "Error getting location data." },
             onPermissionDenied = {
-                notificationMessage = "Keine Berechtigung."
-            }  //todo: was machen wir?
+                notificationMessage = "Location: permission denied."
+            }
         )
-        //}
     }
 
     /* FILE UPLOAD */
@@ -223,9 +233,15 @@ class ThatsAppModel(
             getMessageImage(chatImageURL, message)
             addMessage(message)
         }
+        if (message.messageType == ChatPayloadContents.LOCATION.name) {
+            val chatLocation = ChatLocation(message.payload)
+            val geoPosition = GeoPosition(chatLocation.longitude.toDouble(), chatLocation.latitude.toDouble(), 0.0)
+            message.position = geoPosition
+            addMessage(message)
+        }
         // Loc: create geoLocation
         playSound()
-        // TODO: Process LOCATION, INFO, LIVE, IMAGE
+        // TODO: Process INFO, LIVE, IMAGE
     }
 
     private fun addMessage(message: ChatMessage) {
@@ -263,19 +279,27 @@ class ThatsAppModel(
             profileUserTopic = "$userTopic$profileId",
             thisUserNotificationTopic = "$notificationTopic$profileId",
             onNewMessages = {
-                processMessage(it) // TODO get payload to receive
+                processMessage(it)
             }
         )
     }
 
     fun prePublish(){
         when (currentMessageOptionSend){
-            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE -> {
+            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE, ChatPayloadContents.LOCATION -> {
                 publish()
             }
             ChatPayloadContents.IMAGE -> {
                 uploadImageToFileIO()
             }
+            /*
+            ChatPayloadContents.LOCATION -> {
+                if(locationMessageToSend != null) {
+                    publish()
+                }
+            }
+
+             */
         }
     }
 
@@ -296,11 +320,16 @@ class ThatsAppModel(
                 payloadToSend = JSONObject(ChatImage(fileURLToSend!!).asJSON())
                 messageTypeToSend = ChatPayloadContents.IMAGE.name
                 fileURLToSend = null
-            } // show bitmap
-            ChatPayloadContents.LOCATION -> { }
+            }
+            ChatPayloadContents.LOCATION -> {
+                val lat = locationMessageToSend!!.latitude.toString()
+                val lon = locationMessageToSend!!.longitude.toString()
+                payloadToSend = JSONObject(ChatLocation(lat, lon).asJSON())
+                messageTypeToSend = ChatPayloadContents.LOCATION.name
+            }
             ChatPayloadContents.INFO -> {  }
             ChatPayloadContents.LIVE -> {  }
-            else -> { notificationMessage = "Publish failed."  } // TODO (when enough time) set NONE to Text (in GUI and set it here on TEXT)
+            else -> { notificationMessage = "Publish failed."  }
         }
 
         val chatMessage = currentChatPartner?.userID?.let {
@@ -312,13 +341,16 @@ class ThatsAppModel(
                 payload = payloadToSend,
                 messageType = messageTypeToSend,
                 bitmap = imageMessageToSend,
+                position = locationMessageToSend,
                 read = false,
                 delivered = false
             )
         }
         imageMessageToSend = null
+        locationMessageToSend = null
+
         if (chatMessage != null) {
-            // dann addMessage hier.
+            // TODO if time:  dann addMessage hier.
             mqttConnector.publish(
                 message = chatMessage,
                 subtopic = "$notificationTopic${currentChatPartner?.userID}",
@@ -336,8 +368,12 @@ class ThatsAppModel(
 
     /* PHOTO */
     fun takePhoto() {
+        isLoading = true
         cameraAppConnector.getBitmap(
-            onSuccess = { imageMessageToSend = it },
+            onSuccess = {
+                imageMessageToSend = it
+                isLoading = false
+            },
             onCanceled = { notificationMessage = "Aborted sending image." })
     }
 

@@ -59,15 +59,7 @@ public fun Notification(model: ThatsAppModel, scaffoldState: ScaffoldState) {
 
 @Composable
 fun LoadingIndicator(isLoading: Boolean = true) {
-    if (isLoading) {
-        Column(
-            modifier = Modifier.fillMaxWidth().fillMaxHeight(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            CircularProgressIndicator(modifier = Modifier.size(60.dp))
-        }
-    }
+    CircularProgressIndicator(modifier = Modifier.size(30.dp))
 }
 
 @Composable

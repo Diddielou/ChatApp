@@ -8,6 +8,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.InsertPhoto
 import androidx.compose.material.icons.outlined.Mood
 import androidx.compose.material.icons.outlined.Place
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fhnw.emoba.thatsapp.model.ChatPayloadContents
 import fhnw.emoba.thatsapp.model.ThatsAppModel
+import fhnw.emoba.thatsapp.ui.screens.LoadingIndicator
 
 /**
  * Inspired by https://github.com/elye/demo_android_jetchat_with_websocket/blob/main/app/src/main/java/com/example/compose/jetchat/conversation/UserInput.kt
@@ -85,11 +87,20 @@ fun UserInput(
                             textFieldFocusState = focused
                         },
                     )
-                    // TODO Keyboard bug
                     SendButton(
                         sendMessageEnabled =
-                            model.textMessageToSend.isNotEmpty() ||
-                            model.imageMessageToSend != null,
+                            if (currentMessageOption == ChatPayloadContents.NONE ||
+                                currentMessageOption == ChatPayloadContents.EMOJI ||
+                                currentMessageOption == ChatPayloadContents.TEXT
+                            ) {
+                                model.textMessageToSend.isNotEmpty()
+                            } else if (currentMessageOption == ChatPayloadContents.IMAGE) {
+                                model.imageMessageToSend != null
+                            } else if (currentMessageOption == ChatPayloadContents.LOCATION) {
+                                model.locationMessageToSend != null
+                            } else {
+                                false
+                            },
                         onMessageSend = {
                             model.currentMessageOptionSend = currentMessageOption
                             model.prePublish()
@@ -108,7 +119,9 @@ private fun MessageOptions(
     model: ThatsAppModel
 ) {
     Row(
-        modifier = Modifier.height(45.dp).padding(top = 5.dp),
+        modifier = Modifier
+            .height(45.dp)
+            .padding(top = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
@@ -128,7 +141,10 @@ private fun MessageOptions(
             description = "Send photo"
         )
         InputOptionButton(
-            onClick = { onOptionChange(ChatPayloadContents.LOCATION) },
+            onClick = {
+                onOptionChange(ChatPayloadContents.LOCATION)
+                model.saveCurrentPosition()
+              },
             icon = Icons.Outlined.Place,
             selected = currentMessageOption == ChatPayloadContents.LOCATION,
             description = "Send location"
@@ -178,7 +194,6 @@ private fun OptionExpanded(
     onTextAdded: (String) -> Unit,
     model: ThatsAppModel
 ) {
-
     if (currentMessageOption == ChatPayloadContents.TEXT || currentMessageOption == ChatPayloadContents.NONE) return
 
     // Request focus to force the TextField to lose it
@@ -186,13 +201,14 @@ private fun OptionExpanded(
     // If the option is shown, always request focus to trigger a TextField.onFocusChange.
     SideEffect {
         if (currentMessageOption == ChatPayloadContents.EMOJI ||
-            currentMessageOption == ChatPayloadContents.IMAGE) {
+            currentMessageOption == ChatPayloadContents.IMAGE ||
+            currentMessageOption == ChatPayloadContents.LOCATION ) {
             focusRequester.requestFocus()
         }
     }
     Surface() {
         when (currentMessageOption) {
-            ChatPayloadContents.EMOJI -> { EmojiOption(onTextAdded, focusRequester) }
+            ChatPayloadContents.EMOJI -> { EmojiOption(model, onTextAdded, focusRequester) }
             ChatPayloadContents.IMAGE -> { ImageOption(model, focusRequester) }
             ChatPayloadContents.LOCATION -> { LocationOption(model, focusRequester) }
         }
@@ -203,23 +219,26 @@ private fun OptionExpanded(
 /* OPTIONS */
 @Composable
 fun EmojiOption(
+    model: ThatsAppModel,
     onTextAdded: (String) -> Unit,
     focusRequester: FocusRequester
 ) {
-    Column(
-        modifier = Modifier
+    Option(model = model,
+        modifierCol = Modifier
             .focusRequester(focusRequester) // Requests focus when the Emoji option is displayed
             // Make the emoji option focusable so it can steal focus from TextField
-            .focusTarget()
-    ) {
+            .focusTarget(),
+
         // TODO Scrolling right doesn't work
-        Row(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        modifierRow = Modifier.verticalScroll(rememberScrollState()),
+        nullable = true,
+        rowContent = {
             EmojiTable(
                 onTextAdded,
                 modifier = Modifier.padding(8.dp)
             )
         }
-    }
+    )
 }
 
 @Composable
@@ -227,37 +246,47 @@ fun ImageOption(
     model: ThatsAppModel,
     focusRequester: FocusRequester
 ) {
-    Column(
-        modifier = Modifier
+    Option(model = model,
+        modifierCol = Modifier
             .focusRequester(focusRequester)
             .focusTarget()
-    ) {
-        Row() {
-            if(model.imageMessageToSend != null){
-                Image(bitmap = model.imageMessageToSend!!.asImageBitmap(),
-                    contentDescription = "Image to send",
-                    modifier = Modifier.size(150.dp)
-                )
-            }
+            .fillMaxWidth()
+            .height(190.dp),
+        modifierRow = Modifier.fillMaxWidth(),
+        nullable = model.imageMessageToSend,
+        rowContent = {
+            Image(bitmap = model.imageMessageToSend!!.asImageBitmap(),
+                contentDescription = "Image to send",
+                modifier = Modifier.size(175.dp)
+            )
         }
-    }
+    )
 }
-
 
 @Composable
 fun LocationOption(
     model: ThatsAppModel,
     focusRequester: FocusRequester
 ) {
-    Column(
-        modifier = Modifier
+
+    Option(
+        model = model,
+        modifierCol = Modifier
             .focusRequester(focusRequester)
             .focusTarget()
-    ) {
-        Row() {
-
+            .fillMaxWidth()
+            .height(50.dp),
+        modifierRow = Modifier.fillMaxWidth(),
+        nullable = model.locationMessageToSend,
+        rowContent = {
+            Icon(
+                imageVector = Icons.Filled.Map,
+                contentDescription = "Location",
+                tint = MaterialTheme.colors.secondary
+            )
+            Text(model.locationMessageToSend!!.dms())
         }
-    }
+    )
 }
 
 val KeyboardShownKey = SemanticsPropertyKey<Boolean>("KeyboardShownKey")
@@ -340,6 +369,30 @@ private fun SendButton(
 
 
 /* FURTHER */
+
+@Composable
+fun Option(
+    model: ThatsAppModel, modifierCol: Modifier, modifierRow: Modifier,
+    nullable: Any?, rowContent: @Composable () -> Unit){
+    Column(modifier = modifierCol,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(modifier = modifierRow,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center) {
+            if(model.isLoading){
+                LoadingIndicator()
+            } else {
+                if(nullable != null) {
+                    rowContent()
+                }
+            }
+        }
+    }
+}
+
+
 @Composable
 private fun EmojiTable(
     onTextAdded: (String) -> Unit,

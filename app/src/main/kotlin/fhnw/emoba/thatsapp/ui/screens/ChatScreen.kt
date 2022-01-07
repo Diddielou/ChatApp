@@ -3,6 +3,7 @@ package fhnw.emoba.thatsapp.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -21,13 +24,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import fhnw.emoba.freezerapp.ui.theme.gray300
 import fhnw.emoba.thatsapp.data.ChatMessage
+import fhnw.emoba.thatsapp.data.GeoPosition
 import fhnw.emoba.thatsapp.model.*
 import fhnw.emoba.thatsapp.ui.UserInput
 import kotlinx.coroutines.launch
@@ -98,7 +102,7 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
     Box(
         modifier.border(
             width = 1.dp,
-            brush = SolidColor(gray300),
+            brush = SolidColor(Color.Transparent),
             shape = RectangleShape
         )
     ) {
@@ -157,7 +161,12 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
                         modifier = Modifier.size(100.dp)) }
                 )
             }
-            ChatPayloadContents.LOCATION.name -> { }
+            ChatPayloadContents.LOCATION.name -> {
+                ChatRow(chatMessage = chatMessage, model = model,
+                    modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
+                    rowContent = { LocationContent(position = chatMessage.position!!) }
+                )
+            }
             ChatPayloadContents.INFO.name -> {  }
             ChatPayloadContents.LIVE.name -> { }
         }
@@ -168,7 +177,6 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
 @Composable
 fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
             modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
-
     if(chatMessage.senderID == model.profileId) { // message from profile
         Column(
             modifier = Modifier
@@ -178,7 +186,9 @@ fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifi
             verticalArrangement = Arrangement.Top
         ) {
 
-            Row(modifierSelf.fillMaxSize()) {
+            Row(modifierSelf.fillMaxSize(), // TODO
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start) {
                 rowContent()
             }
         }
@@ -187,10 +197,25 @@ fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifi
         Column(modifier = Modifier
             .padding(end = 25.dp)
             .fillMaxSize(), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.Top ) {
-            Row(modifierForeign.fillMaxSize()){
+            Row(modifierForeign.fillMaxSize(), // TODO
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.Start){
                 rowContent()
             }
         }
+    }
+}
+
+@Composable
+fun LocationContent(position: GeoPosition) {
+    val uriHandler = LocalUriHandler.current
+    Row(Modifier
+        .clickable  { uriHandler.openUri(position.asGoogleMapsURL()) },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Icon(imageVector = Icons.Filled.Place, contentDescription = "Location", tint = MaterialTheme.colors.secondary)
+        Text(text = position.dms(), color = MaterialTheme.colors.secondary)
     }
 }
 

@@ -13,6 +13,7 @@ data class ChatMessage (
     val receiverID: String,
     val payload: JSONObject,
     var bitmap: Bitmap?,
+    var position: GeoPosition?,
     var read: Boolean,
     var delivered: Boolean
 ) {
@@ -25,6 +26,7 @@ data class ChatMessage (
         json.getString("receiverID"),
         json.getJSONObject("payload"),
         Bitmap.createBitmap(30, 30, Bitmap.Config.ALPHA_8),
+        null,
         false,
         false
     )
@@ -41,38 +43,6 @@ data class ChatMessage (
             }
             """.trimIndent()
     }
-
-
-    /*
-    fun getPayloadTextData(): ChatText {
-        try {
-            if(messageType == ChatPayloadContents.TEXT.name){
-                ChatText(payload)
-            }
-        } catch (e: Exception){
-
-        }
-    }
-    fun getPayloadLocationData(): ChatLocation {
-        return if(messageType == ChatPayloadContents.LOCATION.name){
-            ChatLocation(payload)
-        } else {
-            ChatLocation("System: Error")
-        }
-    }
-    fun getGeoLocationData(): GeoPosition{
-        val location = getPayloadLocationData()
-        return GeoPosition(location.longitude.toDouble(), location.latitude.toDouble(), 0.0)
-    }
-    fun getPayloadImageData(): ChatImage{
-        return if(messageType == ChatPayloadContents.IMAGE.name){
-            ChatImage(payload)
-        } else {
-            ChatImage("System: Error")
-        }
-    }
-
-     */
 
 
 }
