@@ -18,14 +18,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import fhnw.emoba.freezerapp.ui.theme.typography
 import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 
 /* To go back */
 @Composable
-fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldState: ScaffoldState) {
-    val scope = rememberCoroutineScope()
+fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen) {
     with(model) {
         TopAppBar(
             title = { Text(text = title ) },
@@ -37,9 +37,9 @@ fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen, scaffoldS
     }
 }
 
-/* PROFILE IMAGE */
+/* USERS */
 @Composable
-public fun ProfileImage(user: ChatUser, size: Int) {
+fun ProfileImage(user: ChatUser, size: Int) {
     val imageModifier = Modifier
         .size(size.dp)
         .clip(CircleShape)
@@ -57,9 +57,19 @@ public fun ProfileImage(user: ChatUser, size: Int) {
     }
 }
 
+@Composable
+fun LastOnlineOrTyping(model: ThatsAppModel, user: ChatUser){
+    if(user.isLive){
+        Text("typing...", style = typography.body2)
+    } else {
+        Text("last online: " + model.getLocalDateTimeFromUTCtimestamp(user.lastOnline),
+            style = typography.body2)
+    }
+}
+
 /* NOTIFICATIONS */
 @Composable
-public fun NotificationHost(state: SnackbarHostState) {
+fun NotificationHost(state: SnackbarHostState) {
     SnackbarHost(state) { data ->
         Box(
             modifier = Modifier.fillMaxHeight(),
@@ -71,7 +81,7 @@ public fun NotificationHost(state: SnackbarHostState) {
 }
 
 @Composable
-public fun Notification(model: ThatsAppModel, scaffoldState: ScaffoldState) {
+fun Notification(model: ThatsAppModel, scaffoldState: ScaffoldState) {
     with(model) {
         if (notificationMessage.isNotBlank()) {
             LaunchedEffect(scaffoldState.snackbarHostState) {
@@ -87,7 +97,7 @@ public fun Notification(model: ThatsAppModel, scaffoldState: ScaffoldState) {
 
 /* APP BEHAVIOUR */
 @Composable
-fun LoadingIndicator(isLoading: Boolean = true) {
+fun LoadingIndicator() {
     CircularProgressIndicator(modifier = Modifier.size(30.dp))
 }
 

@@ -57,7 +57,10 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ){
-                    Heading3(text = title)
+                    Column() {
+                        Heading3(title)
+                        LastOnlineOrTyping(model, currentChatPartner!!)
+                    }
                     ProfileImage(currentChatPartner!!, 45)
                 }
             },
@@ -137,8 +140,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
             color = MaterialTheme.colors.secondary.copy(alpha = 0.15f),
             shape = RoundedCornerShape(10.dp)
         )
-        .padding(10.dp, 5.dp, 5.dp, 10.dp)
-
+        .padding(10.dp, 7.dp, 7.dp, 10.dp)
 
     val modifierForeignMessage = Modifier
         .background(
@@ -151,37 +153,39 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
         when (messageType){
             ChatPayloadContents.TEXT.name -> {
                 val chatText = ChatText(payload)
-                ChatRow(chatMessage = chatMessage, model = model,
+                MessageContent(chatMessage = chatMessage, model = model,
                     modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
                     rowContent = { Text(text = chatText.body, fontWeight = FontWeight.Normal) }
                 )
             }
             ChatPayloadContents.IMAGE.name -> {
-                ChatRow(chatMessage = chatMessage, model = model,
+                MessageContent(chatMessage = chatMessage, model = model,
                     modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
                     rowContent = { Image(
                         bitmap = chatMessage.bitmap!!.asImageBitmap(),
                         contentDescription = "Sent Image",
-                        modifier = Modifier.size(100.dp)) }
+                        modifier = Modifier.size(250.dp)) }
                 )
             }
             ChatPayloadContents.LOCATION.name -> {
-                ChatRow(chatMessage = chatMessage, model = model,
+                MessageContent(chatMessage = chatMessage, model = model,
                     modifierSelf = modifierMyMessage, modifierForeign = modifierForeignMessage,
                     rowContent = { LocationContent(position = chatMessage.position!!) }
                 )
             }
-            ChatPayloadContents.INFO.name -> {  }
-            ChatPayloadContents.LIVE.name -> { }
+            ChatPayloadContents.INFO.name -> {
+
+            }
         }
 
     }
 }
 
 @Composable
-fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
-            modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
-    if(chatMessage.senderID == model.profileId) { // message from profile
+fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
+                   modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
+
+    if(model.messageSent && chatMessage.senderID == model.profileId && !model.uploadInProgress) { // message from profile
         Column(
             modifier = Modifier
                 .padding(start = 25.dp)
@@ -189,8 +193,7 @@ fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifi
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Top
         ) {
-
-            Row(modifierSelf.fillMaxSize(), // TODO
+            Row(modifierSelf.fillMaxSize(),
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.Start) {
                 rowContent()
@@ -198,13 +201,21 @@ fun ChatRow(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifi
         }
     }
     else { // message from currentChatPartner
-        Column(modifier = Modifier
-            .padding(end = 25.dp)
-            .fillMaxSize(), horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.Top ) {
-            Row(modifierForeign.fillMaxSize(), // TODO
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.Start){
-                rowContent()
+        if(!model.downloadInProgress) {
+            Column(
+                modifier = Modifier
+                    .padding(end = 25.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Row(
+                    modifierForeign.fillMaxSize(), // TODO
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.Start
+                ) {
+                    rowContent()
+                }
             }
         }
     }

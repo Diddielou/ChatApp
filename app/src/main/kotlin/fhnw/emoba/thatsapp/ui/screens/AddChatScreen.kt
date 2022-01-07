@@ -68,12 +68,13 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
     with(user) {
         ListItem(
             modifier = Modifier.clickable(onClick = {
-                //model.filterMessagesPerConversation(user)
                 model.currentChatPartner = user
                 model.currentScreen = Screen.CHAT
             }),
             text = { Text(nickname) },
-            secondaryText = { Text("last online: " + model.getLocalDateTimeFromUTCtimestamp(user.lastOnline)) },
+            secondaryText = {
+                LastOnlineOrTyping(model, user)
+            },
             trailing = { ProfileImage(user, 50) }
         )
         Divider()

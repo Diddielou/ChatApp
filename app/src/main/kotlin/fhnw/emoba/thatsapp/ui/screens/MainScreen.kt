@@ -106,7 +106,9 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
                 model.currentScreen = Screen.CHAT
             }),
             text = { Text(nickname) },
-            secondaryText = { Text("last online: " + model.getLocalDateTimeFromUTCtimestamp(user.lastOnline)) },
+            secondaryText = {
+                LastOnlineOrTyping(model, user)
+            },
             trailing = { ProfileImage(user, 50) }
         )
         Divider()

@@ -75,6 +75,7 @@ fun UserInput(
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically
             ) {
                     UserInputText(
+                        model = model,
                         messageValue = model.textMessageToSend,
                         onTextChanged = { model.textMessageToSend = it },
                         // Only show the keyboard if there's no input option and text field has focus
@@ -211,6 +212,7 @@ private fun OptionExpanded(
             ChatPayloadContents.EMOJI -> { EmojiOption(model, onTextAdded, focusRequester) }
             ChatPayloadContents.IMAGE -> { ImageOption(model, focusRequester) }
             ChatPayloadContents.LOCATION -> { LocationOption(model, focusRequester) }
+            else -> {  }
         }
     }
 }
@@ -296,6 +298,7 @@ var SemanticsPropertyReceiver.keyboardShownProperty by KeyboardShownKey
 @ExperimentalFoundationApi
 @Composable
 private fun UserInputText(
+    model: ThatsAppModel,
     onTextChanged: (String) -> Unit,
     messageValue: String,
     onTextFieldFocused: (Boolean) -> Unit,
@@ -309,7 +312,10 @@ private fun UserInputText(
         var lastFocusState by remember { mutableStateOf(false) }
         OutlinedTextField(
             value = messageValue,
-            onValueChange = { onTextChanged(it) },
+            onValueChange = {
+                onTextChanged(it)
+                model.isTypingSend = true
+            },
             singleLine = false,
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Ascii,

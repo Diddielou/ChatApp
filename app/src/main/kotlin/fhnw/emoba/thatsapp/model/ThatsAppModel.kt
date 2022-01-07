@@ -60,67 +60,28 @@ class ThatsAppModel(
     val mainTopic = "fhnw/emoba/thatsapp01cc"
     val notificationTopic = "/notifications/users/"
     val userTopic = "/users/"
-    /*
-    http://www.hivemq.com/demos/websocket-client/
-    Subscriptions:
-    Get users: fhnw/emoba/thatsapp01cc/users/#
-    Get messages: fhnw/emoba/thatsapp01cc/notification/users/229abb4a-4fe9-4dfa-a013-594a8fba5bab
-    Send texts to me: fhnw/emoba/thatsapp01cc/notification/users/229abb4a-4fe9-4dfa-a013-594a8fba5bab
-
-    Publish users: fhnw/emoba/thatsapp01cc/users/
-    {
-      "userID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
-      "nickname": "Hansli",
-      "bio": "some interesting text about me",
-      "userImage": "https://oneoffixx.com/wp-content/uploads/logo.png.webp",
-      "lastOnline": 1640095599,
-      "version": "1.0.0"
-    }
-     Receiver: me
-     Sender: Hansli
-
-    {
-    "timestamp": 1641296690,
-    "messageID": "c7f29c84-2449-4780-becd-b23ad2991266",
-    "senderID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
-    "receiverID": "229abb4a-4fe9-4dfa-a013-594a8fba5bab",
-    "payload": {
-      "body":"Thanks!"
-    },
-    "messageType": "TEXT"
-}
-
-    {
-    "timestamp": 1640095516,
-    "messageID": "c7f29c84-2449-4780-becd-b23ad2991134",
-    "senderID": "0daffcae-dc4e-4ek9-87ec-9670874a458d",
-    "receiverID": "229abb4a-4fe9-4dfa-a013-594a8fba5bab",
-    "payload": {
-      "lat": 42.831703395,
-      "lon": 3.566797316
-    },
-    "messageType": "LOCATION"
-  }
-
-    */
 
     private val mqttConnector by lazy { MqttConnector(mqttBroker, mainTopic) }
     private val soundPlayer by lazy { MediaPlayer.create(context, R.raw.hangouts_message) }
 
     var isLoading by mutableStateOf(false)
 
+    // excluded: LIVE & INFO
     var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
+    // included: LIVE & INFO
+    var currentMessageType by mutableStateOf(ChatPayloadContents.NONE)
+
     var textMessageToSend by mutableStateOf("")
     var imageMessageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
+    var isTypingSend by mutableStateOf(false)
 
     val allMessages = mutableStateListOf<ChatMessage>()
     var notificationMessage by mutableStateOf("")
-
-    /* CHAT PARTNERS */
-    var currentChatPartner by mutableStateOf<ChatUser?>(null)
+    var messageSent by mutableStateOf(false)
 
     /* USERS */
     val allUsers = mutableStateListOf<ChatUser>()
+    var currentChatPartner by mutableStateOf<ChatUser?>(null)
 
     /* PHOTO */
     var photo by mutableStateOf<Bitmap?>(null)
@@ -130,19 +91,6 @@ class ThatsAppModel(
     var locationMessageToSend by mutableStateOf<GeoPosition?>(null) // bleibt nur bei mir
 
 
-    // Publish current position
-    fun saveCurrentPosition() {
-        isLoading = true
-        locator.getLocation(onSuccess = {
-            locationMessageToSend = it
-            isLoading = false
-        },
-            onFailure = { notificationMessage = "Error getting location data." },
-            onPermissionDenied = {
-                notificationMessage = "Location: permission denied."
-            }
-        )
-    }
 
     /* FILE UPLOAD */
     var fileURLToSend by mutableStateOf<String?>(null)
@@ -184,9 +132,10 @@ class ThatsAppModel(
             userImage = profileImageURL,
             userProfileImage = null,
             lastOnline = profileLastOnline,
-            version = profileVersion
+            version = profileVersion,
+            isLive = false
         )
-        updatePrefs();
+        updatePrefs()
         return profile
     }
 
@@ -205,22 +154,28 @@ class ThatsAppModel(
 
 
     /* USERS */
-    fun addChatUser(user: ChatUser) {
-        allUsers.add(user)
+    private fun getUserById(id: String) : ChatUser? {
+        return allUsers.find { it.userID == id }
     }
 
     private fun addOrUpdateUserList(givenUser: ChatUser) {
-        val existingUser = allUsers.find {it.userID == givenUser.userID}
+        val existingUser = allUsers.find { it.userID == givenUser.userID }
 
         if(existingUser != null){
             allUsers.remove(existingUser)
         }
-        allUsers.add(givenUser)
+        if(givenUser.userID != profileId) {
+            allUsers.add(givenUser)
+        }
     }
 
+    fun filterMessagesPerConversation(givenUser: ChatUser) : List<ChatMessage> {
+        val tempList = allMessages
 
-    /* PAYLOADS */
+        // keep messages in list that are from me to the givenUser.id or from givenUser.id to me
+        return tempList.filter { a -> a.senderID == givenUser.userID || a.receiverID == givenUser.userID }
 
+    }
 
     /* MESSAGES */
     // received messages
@@ -230,7 +185,7 @@ class ThatsAppModel(
         }
         if (message.messageType == ChatPayloadContents.IMAGE.name) {
             val chatImageURL = ChatImage(message.payload).url
-            getMessageImage(chatImageURL, message)
+            downloadMessageImage(chatImageURL, message)
             addMessage(message)
         }
         if (message.messageType == ChatPayloadContents.LOCATION.name) {
@@ -239,26 +194,23 @@ class ThatsAppModel(
             message.position = geoPosition
             addMessage(message)
         }
-
         playSound()
-        // TODO: Process INFO, LIVE, IMAGE
+
+        if (message.messageType == ChatPayloadContents.LIVE.name) {
+            val chatLive = ChatLive(message.payload)
+            val user = getUserById(message.senderID)
+            if (user != null){
+                user.isLive = chatLive.typing.toBoolean()
+            }
+            addMessage(message)
+        }
+
+
+        // TODO: Process INFO
     }
 
     private fun addMessage(message: ChatMessage) {
         allMessages.add(message)
-    }
-
-    fun getMessageImage(chatImageURL: String, message: ChatMessage) {
-        modelScope.launch {
-            if (chatImageURL.isNotEmpty()) {
-                downloadBitmapFromURL(
-                    url = chatImageURL,
-                    onSuccess = { message.bitmap = it },
-                    onDeleted = { notificationMessage = "Image is deleted" },
-                    onError = { notificationMessage = "Connection failed" })
-                downloadInProgress = false
-            }
-        }
     }
 
 
@@ -284,6 +236,7 @@ class ThatsAppModel(
         )
     }
 
+    /* SEND MESSAGES */
     fun prePublish(){
         when (currentMessageOptionSend){
             ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE, ChatPayloadContents.LOCATION -> {
@@ -292,11 +245,14 @@ class ThatsAppModel(
             ChatPayloadContents.IMAGE -> {
                 uploadImageToFileIO()
             }
+            else -> { notificationMessage = "Publish failed." }
+        }
+        if(isTypingSend){
+            currentMessageType = ChatPayloadContents.LIVE
         }
     }
 
 
-    // TODO change payload to what I actually send
     fun publish() {
         // build Payload
         var payloadToSend = JSONObject()
@@ -319,8 +275,12 @@ class ThatsAppModel(
                 payloadToSend = JSONObject(ChatLocation(lat, lon).asJSON())
                 messageTypeToSend = ChatPayloadContents.LOCATION.name
             }
+            ChatPayloadContents.LIVE -> {
+                payloadToSend = JSONObject(ChatLive("true").asJSON())
+            }
+
+            // TODO: INFO
             ChatPayloadContents.INFO -> {  }
-            ChatPayloadContents.LIVE -> {  }
             else -> { notificationMessage = "Publish failed."  }
         }
 
@@ -342,11 +302,11 @@ class ThatsAppModel(
         locationMessageToSend = null
 
         if (chatMessage != null) {
-            // TODO if time:  dann addMessage hier.
+            addMessage(chatMessage)
             mqttConnector.publish(
                 message = chatMessage,
                 subtopic = "$notificationTopic${currentChatPartner?.userID}",
-                onPublished = { addMessage(chatMessage) }, // setMessageSent boolean true (dann im GUI anzeigen)
+                onPublished = { messageSent = true }, // setMessageSent boolean true (dann im GUI anzeigen) TODO: needed?
                 onError = { notificationMessage = "Couldn't publish: ${chatMessage.messageID}" }
             )
         }
@@ -358,7 +318,7 @@ class ThatsAppModel(
         soundPlayer.start()
     }
 
-    /* PHOTO */
+    /* IMAGE */
     fun takePhoto() {
         isLoading = true
         cameraAppConnector.getBitmap(
@@ -381,48 +341,24 @@ class ThatsAppModel(
     }
 
 
-    /* USERS */
-
-    /*
-    Notes
-        // senderID : me  => message from me to someone 1
-        // receiverID: foreign => message From me to someone 1
-
-        // senderID : foreign => message to me from someone else 2
-        // receiverID: me => message from someone else to me 2
-     */
-    // TODO use in UI
-    fun filterMessagesPerConversation(givenUser: ChatUser) : List<ChatMessage> {
-        val tempList = allMessages
-
-        //tempList.filter { a -> a.senderID != profileId  } // keep all messages in list that are foreign
-
-        // keep messages in list that are from me to the givenUser.id or from givenUser.id to me
-        return tempList.filter { a -> a.senderID == givenUser.userID || a.receiverID == givenUser.userID }
-
-    }
-
-    fun filterConversationForMyMessages(givenUser: ChatUser) : List<ChatMessage> {
-        val tempList = filterMessagesPerConversation(givenUser)
-
-        return tempList.filter { a -> a.senderID == givenUser.userID }
-    }
-    fun filterConversationForForeignMessages(givenUser: ChatUser) : List<ChatMessage> {
-        val tempList = filterMessagesPerConversation(givenUser)
-
-        return tempList.filter { a -> a.receiverID == givenUser.userID }
-    }
-
-    fun loadUserListImages() {
-        allUsers.forEach {
-            downloadUserImageFromURL(it)
+    /* UP AND DOWNLOAD FILES */
+    private fun downloadMessageImage(chatImageURL: String, message: ChatMessage) {
+        modelScope.launch {
+            downloadInProgress = true
+            if (chatImageURL.isNotEmpty()) {
+                downloadBitmapFromURL(
+                    url = chatImageURL,
+                    onSuccess = { message.bitmap = it },
+                    onDeleted = { notificationMessage = "Image is deleted." },
+                    onError = { notificationMessage = "Connection failed." })
+                downloadInProgress = false
+            }
         }
     }
 
-    /* UP AND DOWNLOAD FILES */
-
     private fun uploadImageToFileIO() {
         modelScope.launch {
+            uploadInProgress = true
             if (imageMessageToSend != null) {
                 uploadBitmapToFileIO(
                     bitmap = imageMessageToSend!!,
@@ -430,14 +366,14 @@ class ThatsAppModel(
                         publish() },
                     onError = { int, _ -> notificationMessage = "$int: Could not upload image from URL." }
                 )
-                uploadInProgress = true
+                uploadInProgress = false
             }
         }
     }
 
-
     fun downloadProfileImageFromURL(): Bitmap? {
         modelScope.launch {
+            downloadInProgress = true
             if (profileImageURL.isNotEmpty()) {
                 downloadBitmapFromURL(
                     url = profileImageURL,
@@ -450,26 +386,26 @@ class ThatsAppModel(
         return profileImage
     }
 
-    fun downloadUserImageFromURL(user: ChatUser) {
-        modelScope.launch {
-            if (user.userImage.isNotBlank()) {
-                downloadBitmapFromURL(
-                    url = user.userImage,
-                    onSuccess = { user.userProfileImage = it },
-                    onDeleted = { notificationMessage = "File is deleted" },
-                    onError = { notificationMessage = "Connection failed" })
-                downloadInProgress = false
-            }
-        }
-    }
-
     // TODO
     private fun loadImageFromStorage(profileImagePath: String): Bitmap {
         return DEFAULT_IMAGE.asAndroidBitmap()
     }
 
-    /* PROFILE */
+    /* LOCATION */
 
+    // to publish current position
+    fun saveCurrentPosition() {
+        isLoading = true
+        locator.getLocation(onSuccess = {
+            locationMessageToSend = it
+            isLoading = false
+        },
+            onFailure = { notificationMessage = "Error getting location data." },
+            onPermissionDenied = {
+                notificationMessage = "Location: permission denied."
+            }
+        )
+    }
 
     /* Help methods: Unix Timestamps */
     /**

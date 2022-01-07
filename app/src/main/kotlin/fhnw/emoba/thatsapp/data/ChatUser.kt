@@ -14,7 +14,8 @@ data class ChatUser(
     val userImage: String,
     var userProfileImage: Bitmap?,
     val lastOnline: Long,
-    val version: String
+    val version: String,
+    var isLive: Boolean
     ) {
 
     constructor(json : JSONObject): this(
@@ -24,7 +25,8 @@ data class ChatUser(
         json.getString("userImage"),
         null,
         json.getLong("lastOnline"),
-        json.getString("version")
+        json.getString("version"),
+        false
     )
 
     fun asJSON(): String {
