@@ -45,6 +45,9 @@ import fhnw.emoba.thatsapp.ui.screens.LoadingIndicator
 /**
  * Inspired by https://github.com/elye/demo_android_jetchat_with_websocket/blob/main/app/src/main/java/com/example/compose/jetchat/conversation/UserInput.kt
  */
+
+
+// TODO: receive image: picture doesn't load.
 @ExperimentalComposeUiApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -79,18 +82,18 @@ fun UserInput(
                         messageValue = model.textMessageToSend,
                         onTextChanged = { model.textMessageToSend = it },
                         // Only show the keyboard if there's no input option and text field has focus
-                        keyboardShown = currentMessageOption == ChatPayloadContents.NONE && textFieldFocusState,
+                        keyboardShown = currentMessageOption == ChatPayloadContents.TEXT && textFieldFocusState,
                         // Close extended option if text field receives focus
                         onTextFieldFocused =  { focused ->
                             if (focused) {
-                                currentMessageOption = ChatPayloadContents.NONE
+                                currentMessageOption = ChatPayloadContents.TEXT
                             }
                             textFieldFocusState = focused
                         },
                     )
                     SendButton(
                         sendMessageEnabled =
-                            if (currentMessageOption == ChatPayloadContents.NONE ||
+                            if (//currentMessageOption == ChatPayloadContents.NONE ||
                                 currentMessageOption == ChatPayloadContents.EMOJI ||
                                 currentMessageOption == ChatPayloadContents.TEXT
                             ) {
@@ -135,7 +138,8 @@ private fun MessageOptions(
         InputOptionButton(
             onClick = {
                 onOptionChange(ChatPayloadContents.IMAGE)
-                model.takePhoto()
+                // TODO choose from options
+                //model.takePhotoForMessage()
              },
             icon = Icons.Outlined.InsertPhoto,
             selected = currentMessageOption == ChatPayloadContents.IMAGE,
@@ -318,7 +322,7 @@ private fun UserInputText(
             },
             singleLine = false,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Ascii,
+                keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Send
             ),
             keyboardActions = KeyboardActions(

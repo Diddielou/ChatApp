@@ -70,7 +70,6 @@ fun downloadBitmapFromURL(url:       String,
         try {
             onSuccess.invoke(bitmap())
         } catch (e: Exception) {
-
             onDeleted.invoke()
         }
     }
@@ -78,7 +77,6 @@ fun downloadBitmapFromURL(url:       String,
 
 
 // ein paar hilfreiche Extension Functions
-
 private fun HttpsURLConnection.message(): String {
     val reader = BufferedReader(InputStreamReader(this.inputStream, StandardCharsets.UTF_8))
     val message = reader.readText()

@@ -19,8 +19,6 @@ val DEFAULT_IMAGE = Bitmap.createBitmap(
     500,
     Bitmap.Config.ALPHA_8).asImageBitmap()
 
-
-
 data class ChatText(
     val body: String // when sending a message
 ) {

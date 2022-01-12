@@ -130,7 +130,6 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
     }
 }
 
-// TODO complete for all options
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
@@ -140,7 +139,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
             color = MaterialTheme.colors.secondary.copy(alpha = 0.15f),
             shape = RoundedCornerShape(10.dp)
         )
-        .padding(10.dp, 7.dp, 7.dp, 10.dp)
+        .padding(10.dp, 5.dp, 5.dp, 10.dp)
 
     val modifierForeignMessage = Modifier
         .background(
@@ -164,7 +163,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
                     rowContent = { Image(
                         bitmap = chatMessage.bitmap!!.asImageBitmap(),
                         contentDescription = "Sent Image",
-                        modifier = Modifier.size(250.dp)) }
+                        modifier = Modifier.height(200.dp)) }
                 )
             }
             ChatPayloadContents.LOCATION.name -> {
@@ -173,11 +172,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
                     rowContent = { LocationContent(position = chatMessage.position!!) }
                 )
             }
-            ChatPayloadContents.INFO.name -> {
-
-            }
         }
-
     }
 }
 
@@ -185,7 +180,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
 fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
                    modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
 
-    if(model.messageSent && chatMessage.senderID == model.profileId && !model.uploadInProgress) { // message from profile
+    if(model.messageSent && chatMessage.senderID == model.profileId) { // message from profile
         Column(
             modifier = Modifier
                 .padding(start = 25.dp)
@@ -193,7 +188,7 @@ fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf:
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.Top
         ) {
-            Row(modifierSelf.fillMaxSize(),
+            Row(modifierSelf,
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.Start) {
                 rowContent()
@@ -201,7 +196,6 @@ fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf:
         }
     }
     else { // message from currentChatPartner
-        if(!model.downloadInProgress) {
             Column(
                 modifier = Modifier
                     .padding(end = 25.dp)
@@ -210,14 +204,13 @@ fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf:
                 verticalArrangement = Arrangement.Top
             ) {
                 Row(
-                    modifierForeign.fillMaxSize(), // TODO
+                    modifierForeign,
                     verticalAlignment = Alignment.Top,
                     horizontalArrangement = Arrangement.Start
                 ) {
                     rowContent()
                 }
             }
-        }
     }
 }
 

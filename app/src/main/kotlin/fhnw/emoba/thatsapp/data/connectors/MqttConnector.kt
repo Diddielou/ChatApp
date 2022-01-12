@@ -118,8 +118,6 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
 
     }
 
-
-
     fun publish(message: ChatMessage,
                 subtopic: String = "",
                 onPublished: () -> Unit = {}, // Was soll geschehen, nachdem gepublished wurde?

@@ -2,9 +2,13 @@ package fhnw.emoba.thatsapp.model
 
 import android.content.Context.MODE_PRIVATE
 import android.graphics.Bitmap
+import android.graphics.ImageDecoder
 import android.graphics.Matrix
 import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.asAndroidBitmap
 import fhnw.emoba.R
@@ -84,6 +88,8 @@ class ThatsAppModel(
     var currentChatPartner by mutableStateOf<ChatUser?>(null)
 
     /* PHOTO */
+    var imageUri by mutableStateOf<Uri?>(null)
+    var textFieldProfileURL by mutableStateOf(false)
     var photo by mutableStateOf<Bitmap?>(null)
 
     /* LOCATION */
@@ -110,17 +116,18 @@ class ThatsAppModel(
     var profileImage by mutableStateOf<Bitmap?>(null)
 
     // Preferences auslesen
+    // https://pbs.twimg.com/profile_images/1140254399962521601/9hL6tDQj_400x400.jpg
     fun loadOrCreateProfile(): ChatUser {
         val prefs = context.getSharedPreferences("thatsAppPreferences", MODE_PRIVATE)
         profileId = prefs.getString("profileId", UUID.randomUUID().toString()).toString()
         profileName = prefs.getString("profileName", "yourName").toString()
         profileBio = prefs.getString("profileBio", "Your bio").toString()
-        profileImageURL = prefs.getString("profileImageURL", "https://pbs.twimg.com/profile_images/1140254399962521601/9hL6tDQj_400x400.jpg").toString()
+        profileImageURL = prefs.getString("profileImageURL", "").toString()
         profileImagePath = prefs.getString("profileImagePath", "").toString()
         profileImage = if (profileImagePath.isNotEmpty()) {
-                            loadImageFromStorage(profileImagePath)
+                            loadProfileImageFromStorage()
                         } else {
-                            downloadProfileImageFromURL()
+                             downloadProfileImageFromURL()
                         }
         val profileVersion = prefs.getString("profileVersion", "1.0.0").toString()
         val profileLastOnline = System.currentTimeMillis() / 1000
@@ -157,7 +164,6 @@ class ThatsAppModel(
     private fun getUserById(id: String) : ChatUser? {
         return allUsers.find { it.userID == id }
     }
-
     private fun addOrUpdateUserList(givenUser: ChatUser) {
         val existingUser = allUsers.find { it.userID == givenUser.userID }
 
@@ -166,6 +172,7 @@ class ThatsAppModel(
         }
         if(givenUser.userID != profileId) {
             allUsers.add(givenUser)
+            downloadUserImageFromURL(givenUser)
         }
     }
 
@@ -174,7 +181,6 @@ class ThatsAppModel(
 
         // keep messages in list that are from me to the givenUser.id or from givenUser.id to me
         return tempList.filter { a -> a.senderID == givenUser.userID || a.receiverID == givenUser.userID }
-
     }
 
     /* MESSAGES */
@@ -186,7 +192,6 @@ class ThatsAppModel(
         if (message.messageType == ChatPayloadContents.IMAGE.name) {
             val chatImageURL = ChatImage(message.payload).url
             downloadMessageImage(chatImageURL, message)
-            addMessage(message)
         }
         if (message.messageType == ChatPayloadContents.LOCATION.name) {
             val chatLocation = ChatLocation(message.payload)
@@ -196,6 +201,7 @@ class ThatsAppModel(
         }
         playSound()
 
+        // TODO check or delete
         if (message.messageType == ChatPayloadContents.LIVE.name) {
             val chatLive = ChatLive(message.payload)
             val user = getUserById(message.senderID)
@@ -205,14 +211,12 @@ class ThatsAppModel(
             addMessage(message)
         }
 
-
         // TODO: Process INFO
     }
 
     private fun addMessage(message: ChatMessage) {
         allMessages.add(message)
     }
-
 
     /**
      * MQTT methods
@@ -238,8 +242,8 @@ class ThatsAppModel(
 
     /* SEND MESSAGES */
     fun prePublish(){
-        when (currentMessageOptionSend){
-            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.NONE, ChatPayloadContents.LOCATION -> {
+        when (currentMessageOptionSend){ // ChatPayloadContents.NONE,
+            ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.LOCATION -> {
                 publish()
             }
             ChatPayloadContents.IMAGE -> {
@@ -247,9 +251,12 @@ class ThatsAppModel(
             }
             else -> { notificationMessage = "Publish failed." }
         }
+        /*
         if(isTypingSend){
             currentMessageType = ChatPayloadContents.LIVE
+            //publish()
         }
+         */
     }
 
 
@@ -275,12 +282,17 @@ class ThatsAppModel(
                 payloadToSend = JSONObject(ChatLocation(lat, lon).asJSON())
                 messageTypeToSend = ChatPayloadContents.LOCATION.name
             }
+            // TODO: Check or delete
+            /*
             ChatPayloadContents.LIVE -> {
-                payloadToSend = JSONObject(ChatLive("true").asJSON())
+                payloadToSend = JSONObject(ChatLive("$isTypingSend").asJSON())
+                isTypingSend = false
             }
 
-            // TODO: INFO
-            ChatPayloadContents.INFO -> {  }
+            // TODO: Check or delete: INFO
+            ChatPayloadContents.INFO -> {
+            }
+             */
             else -> { notificationMessage = "Publish failed."  }
         }
 
@@ -306,9 +318,13 @@ class ThatsAppModel(
             mqttConnector.publish(
                 message = chatMessage,
                 subtopic = "$notificationTopic${currentChatPartner?.userID}",
-                onPublished = { messageSent = true }, // setMessageSent boolean true (dann im GUI anzeigen) TODO: needed?
+                onPublished = {
+                    messageSent = true
+                    isTypingSend = false
+                },
                 onError = { notificationMessage = "Couldn't publish: ${chatMessage.messageID}" }
             )
+            messageSent = false
         }
     }
 
@@ -319,14 +335,14 @@ class ThatsAppModel(
     }
 
     /* IMAGE */
-    fun takePhoto() {
+    fun takePhotoForMessage() {
         isLoading = true
         cameraAppConnector.getBitmap(
             onSuccess = {
                 imageMessageToSend = it
-                isLoading = false
             },
-            onCanceled = { notificationMessage = "Aborted sending image." })
+            onCanceled = { notificationMessage = "Aborted taking image." })
+        isLoading = false
     }
 
     fun rotatePhoto() {
@@ -340,15 +356,35 @@ class ThatsAppModel(
         return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
+    fun takePhotoForProfileImage() {
+        isLoading = true
+        cameraAppConnector.getBitmap(
+            onSuccess = {
+                profileImage = it
+                loadOrCreateProfile()
+            },
+            onCanceled = { notificationMessage = "Aborted taking image." })
+        isLoading = false
+    }
+
+    fun setDefaultProfileImage(){
+        profileImage = null
+        profileImageURL = ""
+        updatePrefs()
+    }
+
 
     /* UP AND DOWNLOAD FILES */
     private fun downloadMessageImage(chatImageURL: String, message: ChatMessage) {
         modelScope.launch {
             downloadInProgress = true
-            if (chatImageURL.isNotEmpty()) {
+            if (chatImageURL.isNotEmpty()) { //  && chatImageURL.startsWith("https://www.file.io/"
                 downloadBitmapFromURL(
                     url = chatImageURL,
-                    onSuccess = { message.bitmap = it },
+                    onSuccess = {
+                        message.bitmap = it
+                        addMessage(message)
+                    },
                     onDeleted = { notificationMessage = "Image is deleted." },
                     onError = { notificationMessage = "Connection failed." })
                 downloadInProgress = false
@@ -371,28 +407,68 @@ class ThatsAppModel(
         }
     }
 
-    fun downloadProfileImageFromURL(): Bitmap? {
+    @RequiresApi(Build.VERSION_CODES.P)
+    fun sendImageFromGallery(){
+        imageUri?.let {
+            val source = ImageDecoder.createSource(context.contentResolver,it)
+            imageMessageToSend = ImageDecoder.decodeBitmap(source)
+            uploadImageToFileIO()
+        }
+
+        /*
+        model.profileImage?.let { btm ->
+            Image(bitmap = btm.asImageBitmap(),
+                contentDescription =null,
+                modifier = Modifier.size(400.dp))
+        }
+
+        bitmap.value?.let {  btm ->
+            Image(bitmap = btm.asImageBitmap(),
+                contentDescription =null,
+                modifier = Modifier.size(400.dp))
+        }
+         */
+    }
+
+
+    private fun downloadProfileImageFromURL(): Bitmap? {
         modelScope.launch {
             downloadInProgress = true
             if (profileImageURL.isNotEmpty()) {
                 downloadBitmapFromURL(
                     url = profileImageURL,
                     onSuccess = { profileImage = it },
-                    onDeleted = { notificationMessage = "File is deleted" },
-                    onError = { notificationMessage = "Connection failed" })
+                    onDeleted = { notificationMessage = "Profile image is deleted" },
+                    onError = { notificationMessage = "Download profile image: Connection failed" })
                 downloadInProgress = false
             }
         }
         return profileImage
     }
 
-    // TODO
-    private fun loadImageFromStorage(profileImagePath: String): Bitmap {
+    // TODO load profile images from users
+    private fun downloadUserImageFromURL(chatUser: ChatUser) {
+        modelScope.launch {
+            downloadInProgress = true
+            if (chatUser.userImage.isNotEmpty() && chatUser.userImage.startsWith("https://")) {
+                downloadBitmapFromURL(
+                    url = chatUser.userImage,
+                    onSuccess = { allUsers.forEach { user ->
+                        if (user.userID == chatUser.userID) {
+                            chatUser.userProfileImage = it  }
+                    } },
+                    onDeleted = { notificationMessage = "User image is deleted" },
+                    onError = { notificationMessage = "Download user image: Connection failed" })
+                downloadInProgress = false
+            }
+        }
+    }
+
+    private fun loadProfileImageFromStorage() : Bitmap {
         return DEFAULT_IMAGE.asAndroidBitmap()
     }
 
     /* LOCATION */
-
     // to publish current position
     fun saveCurrentPosition() {
         isLoading = true

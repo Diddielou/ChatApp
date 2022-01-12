@@ -24,7 +24,7 @@ Displays all users available
 fun AddChatScreen(model: ThatsAppModel) {
     val scaffoldState = rememberScaffoldState()
     Scaffold(scaffoldState = scaffoldState,
-        topBar = { GeneralTopBar(model, Screen.ADDCHAT.title, Screen.MAIN, scaffoldState) },
+        topBar = { GeneralTopBar(model, Screen.ADDCHAT.title, Screen.MAIN) },
         snackbarHost = { NotificationHost(it) },
         content = { Body(model) }
     )
