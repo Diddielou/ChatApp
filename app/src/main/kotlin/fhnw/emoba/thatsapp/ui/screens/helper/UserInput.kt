@@ -1,5 +1,12 @@
 package fhnw.emoba.thatsapp.ui
 
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -9,10 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.outlined.InsertPhoto
-import androidx.compose.material.icons.outlined.Mood
-import androidx.compose.material.icons.outlined.Place
-import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +33,7 @@ import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
@@ -45,9 +50,6 @@ import fhnw.emoba.thatsapp.ui.screens.LoadingIndicator
 /**
  * Inspired by https://github.com/elye/demo_android_jetchat_with_websocket/blob/main/app/src/main/java/com/example/compose/jetchat/conversation/UserInput.kt
  */
-
-
-// TODO: receive image: picture doesn't load.
 @ExperimentalComposeUiApi
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -93,12 +95,13 @@ fun UserInput(
                     )
                     SendButton(
                         sendMessageEnabled =
-                            if (//currentMessageOption == ChatPayloadContents.NONE ||
+                            if (
                                 currentMessageOption == ChatPayloadContents.EMOJI ||
                                 currentMessageOption == ChatPayloadContents.TEXT
                             ) {
                                 model.textMessageToSend.isNotEmpty()
-                            } else if (currentMessageOption == ChatPayloadContents.IMAGE) {
+                            } else if (currentMessageOption == ChatPayloadContents.IMAGE ||
+                                currentMessageOption == ChatPayloadContents.PHOTO) {
                                 model.imageMessageToSend != null
                             } else if (currentMessageOption == ChatPayloadContents.LOCATION) {
                                 model.locationMessageToSend != null
@@ -115,13 +118,35 @@ fun UserInput(
         }
 }
 
-
 @Composable
 private fun MessageOptions(
     onOptionChange: (ChatPayloadContents) -> Unit,
     currentMessageOption: ChatPayloadContents,
     model: ThatsAppModel
 ) {
+    // Choosing image from gallery
+    val context = LocalContext.current
+    var uri : Uri?
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+            uri = it
+            uri.let {
+                if (uri != null) {
+                    if (Build.VERSION.SDK_INT < 28) {
+                        model.imageMessageToSend = MediaStore.Images.Media.getBitmap(
+                            context.contentResolver,
+                            uri
+                        )
+                    } else {
+                        val source = ImageDecoder.createSource(context.contentResolver, uri!!)
+                        model.imageMessageToSend = ImageDecoder.decodeBitmap(source)
+                    }
+                } else { // uri is null
+                    onOptionChange(ChatPayloadContents.NONE)
+                }
+            }
+        }
+
     Row(
         modifier = Modifier
             .height(45.dp)
@@ -137,13 +162,21 @@ private fun MessageOptions(
         )
         InputOptionButton(
             onClick = {
+                onOptionChange(ChatPayloadContents.PHOTO)
+                model.takePhotoForMessage()
+             },
+            icon = Icons.Outlined.PhotoCamera,
+            selected = currentMessageOption == ChatPayloadContents.PHOTO,
+            description = "Send photo"
+        )
+        InputOptionButton(
+            onClick = {
                 onOptionChange(ChatPayloadContents.IMAGE)
-                // TODO choose from options
-                //model.takePhotoForMessage()
+                launcher.launch("image/*")
              },
             icon = Icons.Outlined.InsertPhoto,
             selected = currentMessageOption == ChatPayloadContents.IMAGE,
-            description = "Send photo"
+            description = "Send image from library"
         )
         InputOptionButton(
             onClick = {
@@ -207,6 +240,7 @@ private fun OptionExpanded(
     SideEffect {
         if (currentMessageOption == ChatPayloadContents.EMOJI ||
             currentMessageOption == ChatPayloadContents.IMAGE ||
+            currentMessageOption == ChatPayloadContents.PHOTO ||
             currentMessageOption == ChatPayloadContents.LOCATION ) {
             focusRequester.requestFocus()
         }
@@ -214,6 +248,7 @@ private fun OptionExpanded(
     Surface() {
         when (currentMessageOption) {
             ChatPayloadContents.EMOJI -> { EmojiOption(model, onTextAdded, focusRequester) }
+            ChatPayloadContents.PHOTO -> { ImageOption(model, focusRequester) }
             ChatPayloadContents.IMAGE -> { ImageOption(model, focusRequester) }
             ChatPayloadContents.LOCATION -> { LocationOption(model, focusRequester) }
             else -> {  }

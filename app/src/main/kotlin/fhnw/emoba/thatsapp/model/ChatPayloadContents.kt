@@ -10,6 +10,7 @@ enum class ChatPayloadContents() {
     TEXT,
     LOCATION,
     IMAGE,
+    PHOTO,
     INFO,
     LIVE
 }

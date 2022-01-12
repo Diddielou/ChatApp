@@ -1,5 +1,7 @@
 package fhnw.emoba.thatsapp.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -203,11 +205,9 @@ fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf:
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.Top
             ) {
-                Row(
-                    modifierForeign,
+                Row(modifierForeign,
                     verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.Start
-                ) {
+                    horizontalArrangement = Arrangement.Start) {
                     rowContent()
                 }
             }
@@ -222,7 +222,9 @@ fun LocationContent(position: GeoPosition) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ){
-        Icon(imageVector = Icons.Filled.Place, contentDescription = "Location", tint = MaterialTheme.colors.secondary)
+        Icon(imageVector = Icons.Filled.Place,
+            contentDescription = "Location",
+            tint = MaterialTheme.colors.secondary)
         Text(text = position.dms(), color = MaterialTheme.colors.secondary)
     }
 }

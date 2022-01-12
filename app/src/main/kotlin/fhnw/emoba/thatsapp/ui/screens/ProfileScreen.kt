@@ -47,9 +47,6 @@ import fhnw.emoba.thatsapp.model.ThatsAppModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-
-
-@RequiresApi(Build.VERSION_CODES.P)
 @ExperimentalMaterialApi
 @ExperimentalComposeUiApi
 @Composable
@@ -62,12 +59,10 @@ fun ProfileScreen(model: ThatsAppModel) {
     )
     Notification(model, scaffoldState)
 }
+
+
 // TODO: ModalBottomDrawer should not be shown anymore, when action took place.
 // TODO: Image should be made big onClick
-//
-
-
-@RequiresApi(Build.VERSION_CODES.P)
 @ExperimentalComposeUiApi
 @Composable
 @ExperimentalMaterialApi
@@ -79,16 +74,6 @@ fun ModalBottomSheet(model: ThatsAppModel) {
     ModalBottomSheetLayout(
         sheetState = state,
         sheetContent = {
-
-            /* Get Image */
-            var imageUri by remember { mutableStateOf<Uri?>(null) }
-            val context = LocalContext.current
-            //val bitmap =  remember { mutableStateOf<Bitmap?>(null) }
-            val launcher = rememberLauncherForActivityResult(contract =
-            ActivityResultContracts.GetContent()) { uri: Uri? ->
-                imageUri = uri
-            }
-
             Column(
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally) {
@@ -209,7 +194,6 @@ private fun ProfilePicture(model: ThatsAppModel, state: ModalBottomSheetState) {
             }
     }
 }
-
 
 
 @ExperimentalComposeUiApi
