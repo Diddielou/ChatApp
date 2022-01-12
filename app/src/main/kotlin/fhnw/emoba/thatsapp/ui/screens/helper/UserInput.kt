@@ -1,4 +1,4 @@
-package fhnw.emoba.thatsapp.ui
+package fhnw.emoba.thatsapp.ui.screens.helper
 
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -6,7 +6,6 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -17,13 +16,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -45,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fhnw.emoba.thatsapp.model.ChatPayloadContents
 import fhnw.emoba.thatsapp.model.ThatsAppModel
-import fhnw.emoba.thatsapp.ui.screens.LoadingIndicator
 
 /**
  * Inspired by https://github.com/elye/demo_android_jetchat_with_websocket/blob/main/app/src/main/java/com/example/compose/jetchat/conversation/UserInput.kt
@@ -245,7 +238,7 @@ private fun OptionExpanded(
             focusRequester.requestFocus()
         }
     }
-    Surface() {
+    Surface {
         when (currentMessageOption) {
             ChatPayloadContents.EMOJI -> { EmojiOption(model, onTextAdded, focusRequester) }
             ChatPayloadContents.PHOTO -> { ImageOption(model, focusRequester) }
@@ -384,7 +377,7 @@ private fun SendButton(
     onMessageSend: () -> Unit
 ){
     // Send button
-    Column() {
+    Column {
         IconButton(
             modifier = Modifier
                 .height(47.dp)

@@ -1,7 +1,6 @@
 package fhnw.emoba.thatsapp.model
 
 import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import org.json.JSONObject
 
 enum class ChatPayloadContents() {
@@ -15,7 +14,7 @@ enum class ChatPayloadContents() {
     LIVE
 }
 
-val DEFAULT_IMAGE = Bitmap.createBitmap(
+val DEFAULT_IMAGE: Bitmap = Bitmap.createBitmap(
     500,
     500,
     Bitmap.Config.ALPHA_8)
@@ -66,6 +65,7 @@ data class ChatLocation(
     }
 }
 
+/* not implemented */
 data class ChatLive(val typing : String){
 
     constructor(payload: JSONObject) : this(
@@ -81,6 +81,7 @@ data class ChatLive(val typing : String){
     }
 }
 
+/* not implemented */
 data class ChatInfo(
     val messageID : String,
     val timestamp : String,

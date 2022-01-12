@@ -7,10 +7,10 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Environment
 import android.provider.MediaStore
-import java.io.File
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
+import java.io.File
 
 class CameraAppConnector(val activity: ComponentActivity) {
 

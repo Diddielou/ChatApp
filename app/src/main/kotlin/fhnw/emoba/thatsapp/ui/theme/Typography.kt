@@ -1,4 +1,4 @@
-package fhnw.emoba.freezerapp.ui.theme
+package fhnw.emoba.thatsapp.ui.theme
 
 import androidx.compose.material.Typography
 import androidx.compose.ui.text.TextStyle

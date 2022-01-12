@@ -1,6 +1,7 @@
 package fhnw.emoba.thatsapp.data
 
 import java.util.*
+import kotlin.math.abs
 
 data class GeoPosition (val longitude: Double = 0.0,
                         val latitude:  Double = 0.0,
@@ -20,11 +21,11 @@ data class GeoPosition (val longitude: Double = 0.0,
     }
 
     private fun getDMS(value: Double): String {
-        val absValue = Math.abs(value)
+        val absValue = abs(value)
         val degree   = absValue.toInt()
         val minutes  = ((absValue - degree) * 60.0).toInt()
         val seconds  = (absValue - degree - minutes / 60.0) * 3600.0
 
-        return "${degree}° ${minutes}′ ${String.format(Locale.ENGLISH, "%.4f", seconds)}″";
+        return "${degree}° ${minutes}′ ${String.format(Locale.ENGLISH, "%.4f", seconds)}″"
     }
 }

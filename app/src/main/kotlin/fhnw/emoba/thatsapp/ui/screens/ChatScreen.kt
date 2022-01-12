@@ -30,8 +30,11 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import fhnw.emoba.thatsapp.data.ChatMessage
 import fhnw.emoba.thatsapp.data.GeoPosition
-import fhnw.emoba.thatsapp.model.*
-import fhnw.emoba.thatsapp.ui.UserInput
+import fhnw.emoba.thatsapp.model.ChatPayloadContents
+import fhnw.emoba.thatsapp.model.ChatText
+import fhnw.emoba.thatsapp.model.Screen
+import fhnw.emoba.thatsapp.model.ThatsAppModel
+import fhnw.emoba.thatsapp.ui.screens.helper.*
 import kotlinx.coroutines.launch
 
 @ExperimentalComposeUiApi
@@ -78,26 +81,24 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen) {
 @ExperimentalComposeUiApi
 @Composable
 private fun Body(model: ThatsAppModel) {
-    with(model) {
-        ConstraintLayout(modifier = Modifier.fillMaxSize()) {
-            val (allMessagesPanel, messageField) = createRefs()
-            AllMessagesList(model, Modifier.constrainAs(allMessagesPanel) {
-                width = Dimension.fillToConstraints
-                height = Dimension.fillToConstraints
-                top.linkTo(parent.top, 10.dp)
-                start.linkTo(parent.start, 10.dp)
-                end.linkTo(parent.end, 10.dp)
-                bottom.linkTo(messageField.top)
-            })
+    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+        val (allMessagesPanel, messageField) = createRefs()
+        AllMessagesList(model, Modifier.constrainAs(allMessagesPanel) {
+            width = Dimension.fillToConstraints
+            height = Dimension.fillToConstraints
+            top.linkTo(parent.top, 10.dp)
+            start.linkTo(parent.start, 10.dp)
+            end.linkTo(parent.end, 10.dp)
+            bottom.linkTo(messageField.top)
+        })
 
-            MessageArea(model, Modifier.constrainAs(messageField) {
-                width = Dimension.fillToConstraints
-                top.linkTo(allMessagesPanel.bottom)
-                start.linkTo(parent.start, 10.dp)
-                end.linkTo(parent.end, 10.dp)
-                bottom.linkTo(parent.bottom, 10.dp)
-            })
-        }
+        MessageArea(model, Modifier.constrainAs(messageField) {
+            width = Dimension.fillToConstraints
+            top.linkTo(allMessagesPanel.bottom)
+            start.linkTo(parent.start, 10.dp)
+            end.linkTo(parent.end, 10.dp)
+            bottom.linkTo(parent.bottom, 10.dp)
+        })
     }
 }
 
@@ -106,7 +107,13 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
     val messagesInThisChat =
         model.currentChatPartner?.let { model.filterMessagesPerConversation(it) }
 
-    Box() {
+    Box(
+        modifier.border(
+            width = 1.dp,
+            brush = SolidColor(Color.Transparent),
+            shape = RectangleShape
+        )
+    ) {
         if (messagesInThisChat!!.isEmpty()) {
             OnScreenMessage("No messages yet.")
         } else {
@@ -177,7 +184,7 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
 
 @Composable
 fun MessageContent(chatMessage: ChatMessage, model: ThatsAppModel, modifierSelf: Modifier,
-                   modifierForeign: Modifier, rowContent: @Composable() () -> Unit) {
+                   modifierForeign: Modifier, rowContent: @Composable () -> Unit) {
 
     if(model.messageSent && chatMessage.senderID == model.profileId) { // message from profile
         Column(

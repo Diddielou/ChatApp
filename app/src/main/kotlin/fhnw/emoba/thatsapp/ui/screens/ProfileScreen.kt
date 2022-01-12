@@ -1,50 +1,35 @@
 package fhnw.emoba.thatsapp.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
-import android.graphics.drawable.Icon
-import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import fhnw.emoba.freezerapp.ui.theme.gray300
-import fhnw.emoba.thatsapp.model.DEFAULT_IMAGE
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
-import kotlinx.coroutines.CoroutineScope
+import fhnw.emoba.thatsapp.ui.screens.helper.GeneralTopBar
+import fhnw.emoba.thatsapp.ui.screens.helper.Notification
+import fhnw.emoba.thatsapp.ui.screens.helper.NotificationHost
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
@@ -157,8 +142,8 @@ private fun ProfilePicture(model: ThatsAppModel, state: ModalBottomSheetState) {
         val imageModifier = Modifier
             .size(275.dp)
             .clip(CircleShape)
-            Box(){
-                Row() {
+            Box{
+                Row {
                     if (profileImage != null) {
                         Image(
                             bitmap = profileImage!!.asImageBitmap(),
@@ -211,7 +196,7 @@ private fun ProfileInformation(model: ThatsAppModel, modifier: Modifier) {
             horizontalAlignment = Alignment.Start,
             modifier = modifier
         ) {
-            Row() {
+            Row {
                 InfoTextField(
                     value = profileName,
                     onValueChange = { profileName = it },
@@ -223,7 +208,7 @@ private fun ProfileInformation(model: ThatsAppModel, modifier: Modifier) {
                     modifier = Modifier.padding(0.dp, 10.dp, 0.dp, 10.dp).width(325.dp)
                 )
             }
-            Row() {
+            Row {
                 InfoTextField(
                     value = profileBio,
                     onValueChange = { profileBio = it },

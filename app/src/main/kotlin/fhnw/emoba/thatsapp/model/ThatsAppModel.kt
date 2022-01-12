@@ -10,13 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
 import fhnw.emoba.R
-import fhnw.emoba.thatsapp.data.*
-import fhnw.emoba.thatsapp.data.connectors.CameraAppConnector
-import fhnw.emoba.thatsapp.data.connectors.GPSConnector
-import fhnw.emoba.thatsapp.data.connectors.MqttConnector
+import fhnw.emoba.thatsapp.data.ChatMessage
+import fhnw.emoba.thatsapp.data.ChatUser
+import fhnw.emoba.thatsapp.data.GeoPosition
+import fhnw.emoba.thatsapp.data.connectors.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -74,9 +72,7 @@ class ThatsAppModel(
     // excluded: LIVE & INFO
     var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
 
-    // included: LIVE & INFO
-    var currentMessageType by mutableStateOf(ChatPayloadContents.NONE)
-
+    /* MESSAGES */
     var textMessageToSend by mutableStateOf("")
     var imageMessageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
     var isTypingSend by mutableStateOf(false)
@@ -416,7 +412,6 @@ class ThatsAppModel(
     private fun downloadUserImageFromURL(chatUser: ChatUser) {
         modelScope.launch {
             downloadInProgress = true
-            println(chatUser.userImage)
             if (chatUser.userImage.isNotEmpty() && chatUser.userImage.startsWith("https://")) {
                 downloadBitmapFromURL(
                     url = chatUser.userImage,

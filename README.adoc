@@ -14,11 +14,15 @@
 * Ives With
 * Patrick Gutter
 * Pascal Hostettler
+* Natalie Frei
+* Alexandra Marti
+* Thierry Odermatt
+* Tobias Vonesch
 
 === Herausstellungsmerkmal meiner App
 
-* besonders einfache Bedienbarkeit
-
+* Die App ist besonders benutzerfreundlich.
+* Die Profildaten werden persistiert und sind beim nächsten Start der App wieder verfügbar.
 
 === Abgabe
 
@@ -41,19 +45,19 @@ Anforderungen:
 ** Beispiele: minimale Datenspeicherung auf dem Server; gesamte Chat-Historie wird abgespeichert; besonders einfache Bedienbarkeit, etc.
 
 * Gewünschte Funktionalität
-** Verschicken von Chat-Nachrichten an einzelne Personen einer Chat-Gruppe.
-** Verschicken eines, mit der Kamera des Android-Devices aktuell aufgenommenen, Bildes an den Chat-Teilnehmer.
-** Verschicken der aktuellen GPS-Position an den Chat-Teilnehmer.
-** Übersicht über alle Teilnehmer einer Chat-Gruppe.
-** Profile-Screen mit Name und Avatar-Bild.
+** Verschicken von Chat-Nachrichten an einzelne Personen einer Chat-Gruppe. ✔
+** Verschicken eines, mit der Kamera des Android-Devices aktuell aufgenommenen, Bildes an den Chat-Teilnehmer. ✔
+** Verschicken der aktuellen GPS-Position an den Chat-Teilnehmer. ✔
+** Übersicht über alle Teilnehmer einer Chat-Gruppe. ✔
+** Profile-Screen mit Name und Avatar-Bild. ✔
 
-* Verwendung von MQTT zur Nachrichten-Verteilung
-* Versuchen Sie sich mit möglichst vielen anderen auf ein einheitliches JSON-Format zum Austausch von Nachrichten zu einigen.
+* Verwendung von MQTT zur Nachrichten-Verteilung ✔
+* Versuchen Sie sich mit möglichst vielen anderen auf ein einheitliches JSON-Format zum Austausch von Nachrichten zu einigen. ✔
 ** Idealerweise können unterschiedliche Apps zum Chatten verwendet werden.
-* Das UI ist komplett mit Jetpack Compose zu implementieren.
+* Das UI ist komplett mit Jetpack Compose zu implementieren. ✔
 ** https://developer.android.com/jetpack/compose
-* Implementierungssprache für die gesamte Applikation ist Kotlin.
-* Die im Unterricht erarbeitete Grundstruktur einer Android-App ist anzuwenden.
+* Implementierungssprache für die gesamte Applikation ist Kotlin. ✔
+* Die im Unterricht erarbeitete Grundstruktur einer Android-App ist anzuwenden. ✔
 
 
 === Bewertung

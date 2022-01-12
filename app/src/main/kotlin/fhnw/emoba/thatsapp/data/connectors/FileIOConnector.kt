@@ -1,4 +1,4 @@
-package fhnw.emoba.thatsapp.data
+package fhnw.emoba.thatsapp.data.connectors
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -22,7 +22,7 @@ fun uploadBitmapToFileIO(bitmap:    Bitmap,
     with(URL("https://file.io?expires=1d").openConnection() as HttpsURLConnection){
         //Request
         requestMethod = "POST"
-        setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary)
+        setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
 
         val requestStringStart = crlf + crlf +
                 twoHyphens + boundary + crlf +

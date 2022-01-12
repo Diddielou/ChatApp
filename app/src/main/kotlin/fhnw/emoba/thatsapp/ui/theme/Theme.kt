@@ -1,4 +1,4 @@
-package fhnw.emoba.freezerapp.ui.theme
+package fhnw.emoba.thatsapp.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme
@@ -33,7 +33,7 @@ private val AppLightColors = lightColors(
 )
 
 @Composable
-fun ThatsAppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable() () -> Unit) {
+fun ThatsAppTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {
         AppDarkColors
     } else {

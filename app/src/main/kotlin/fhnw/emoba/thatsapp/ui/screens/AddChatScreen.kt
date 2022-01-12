@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
+import fhnw.emoba.thatsapp.ui.screens.helper.*
 import kotlinx.coroutines.launch
 
 /*
@@ -36,9 +37,7 @@ fun AddChatScreen(model: ThatsAppModel) {
 @ExperimentalMaterialApi
 @Composable
 private fun Body(model: ThatsAppModel) {
-    with(model) {
-        UserList(model = model)
-    }
+    UserList(model = model)
 }
 
 @ExperimentalMaterialApi
@@ -46,17 +45,21 @@ private fun Body(model: ThatsAppModel) {
 private fun UserList(model: ThatsAppModel) {
     val state = rememberLazyListState()
     with(model) {
-        if (isLoading) {
-            LoadingIndicator()
-        } else if(model.allUsers.isEmpty()) {
-            OnScreenMessage("No users found.")
-        } else {
-            LazyColumn(state = state) {
-                items(allUsers) { UserRow(user = it, model = model) }
+        when {
+            isLoading -> {
+                LoadingIndicator()
             }
-            val scope = rememberCoroutineScope()
-            SideEffect {
-                scope.launch { state.animateScrollToItem(allUsers.size - 1) }
+            model.allUsers.isEmpty() -> {
+                OnScreenMessage("No users found.")
+            }
+            else -> {
+                LazyColumn(state = state) {
+                    items(allUsers) { UserRow(user = it, model = model) }
+                }
+                val scope = rememberCoroutineScope()
+                SideEffect {
+                    scope.launch { state.animateScrollToItem(allUsers.size - 1) }
+                }
             }
         }
     }
@@ -80,20 +83,3 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
         Divider()
     }
 }
-
-/*
-@Composable
-fun SmallProfileImage(model: ThatsAppModel, user: ChatUser) {
-    if(user.userProfileImage != null){
-        Image(
-            bitmap = user.userProfileImage!!.asImageBitmap(),
-            contentDescription = "Profile image",
-            modifier = Modifier.size(50.dp)
-        )
-    }
-    else {
-        Icon(Icons.Filled.AccountCircle, "No profile picture")
-    }
-}
-
- */

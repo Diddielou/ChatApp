@@ -1,7 +1,6 @@
 package fhnw.emoba.thatsapp.data
 
 import android.graphics.Bitmap
-import fhnw.emoba.thatsapp.model.*
 import org.json.JSONObject
 
 

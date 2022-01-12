@@ -1,6 +1,5 @@
 package fhnw.emoba.thatsapp.ui.screens
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,11 +14,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
+import fhnw.emoba.thatsapp.ui.screens.helper.*
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
@@ -28,7 +27,7 @@ import kotlinx.coroutines.launch
 fun MainScreen(model: ThatsAppModel) {
     val scaffoldState = rememberScaffoldState()
     Scaffold(scaffoldState = scaffoldState,
-        topBar = { TopBar(model, scaffoldState) },
+        topBar = { TopBar(scaffoldState) },
         drawerContent = { Drawer(model) },
         snackbarHost = { NotificationHost(it) },
         content = { Body(model) }
@@ -37,14 +36,12 @@ fun MainScreen(model: ThatsAppModel) {
 }
 
 @Composable
-private fun TopBar(model: ThatsAppModel, scaffoldState: ScaffoldState) {
-    with(model) {
-        Column {
-            TopAppBar(
-                title = { Text(text = Screen.MAIN.title) },
-                navigationIcon = { DrawerIcon(scaffoldState = scaffoldState) },
-            )
-        }
+private fun TopBar(scaffoldState: ScaffoldState) {
+    Column {
+        TopAppBar(
+            title = { Text(text = Screen.MAIN.title) },
+            navigationIcon = { DrawerIcon(scaffoldState = scaffoldState) },
+        )
     }
 }
 
@@ -61,17 +58,21 @@ private fun Body(model: ThatsAppModel) {
 private fun UserList(model: ThatsAppModel) {
     val state = rememberLazyListState()
     with(model) {
-        if (isLoading) {
-            LoadingIndicator()
-        } else if(model.allUsers.isEmpty()) {
-            OnScreenMessage("No users found.")
-        } else {
-            LazyColumn(state = state) {
-                items(allUsers) { UserRow(user = it, model = model) }
+        when {
+            isLoading -> {
+                LoadingIndicator()
             }
-            val scope = rememberCoroutineScope()
-            SideEffect {
-                scope.launch { state.animateScrollToItem(allUsers.size - 1) }
+            model.allUsers.isEmpty() -> {
+                OnScreenMessage("No users found.")
+            }
+            else -> {
+                LazyColumn(state = state) {
+                    items(allUsers) { UserRow(user = it, model = model) }
+                }
+                val scope = rememberCoroutineScope()
+                SideEffect {
+                    scope.launch { state.animateScrollToItem(allUsers.size - 1) }
+                }
             }
         }
     }

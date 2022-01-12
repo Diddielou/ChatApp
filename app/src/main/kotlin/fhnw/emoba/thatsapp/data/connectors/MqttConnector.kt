@@ -18,8 +18,8 @@ import java.util.*
  * http://www.hivemq.com/demos/websocket-client/
  *
  */
-class MqttConnector (val mqttBroker: String, val maintopic: String,
-                     val qos: MqttQos = MqttQos.AT_LEAST_ONCE) {
+class MqttConnector (mqttBroker: String, private val maintopic: String,
+                     private val qos: MqttQos = MqttQos.AT_LEAST_ONCE) {
 
     private val client = Mqtt5Client.builder()
         .serverHost(mqttBroker)
@@ -78,7 +78,7 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
     }
 
     // auf alle User subscriben
-    fun subscribe(subtopic:          String = "",
+    private fun subscribe(subtopic:          String = "",
                   onNewMessageUsers: (ChatUser) -> Unit,
                   onError:           (exception: Exception,
                                      payload: String) -> Unit = { e, _ -> e.printStackTrace() } ){
@@ -99,9 +99,9 @@ class MqttConnector (val mqttBroker: String, val maintopic: String,
             .send()
     }
 
-    fun subscribeToMyself(thisUserNotificationTopic: String,
-                          onNewMessages: (ChatMessage) -> Unit,
-                          onError: (exception: Exception, payload: String) -> Unit) {
+    private fun subscribeToMyself(thisUserNotificationTopic: String,
+                                  onNewMessages: (ChatMessage) -> Unit,
+                                  onError: (exception: Exception, payload: String) -> Unit) {
         client.subscribeWith()
             .topicFilter(maintopic+thisUserNotificationTopic)
             .qos(qos)

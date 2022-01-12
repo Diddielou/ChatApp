@@ -1,10 +1,6 @@
 package fhnw.emoba.thatsapp.data
 
 import android.graphics.Bitmap
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import fhnw.emoba.thatsapp.model.DEFAULT_IMAGE
 import org.json.JSONObject
 
 data class ChatUser(

@@ -5,11 +5,10 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
-import fhnw.emoba.freezerapp.ui.theme.ThatsAppTheme
+import fhnw.emoba.thatsapp.ui.theme.ThatsAppTheme
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 import fhnw.emoba.thatsapp.ui.screens.*
-import fhnw.emoba.thatsapp.ui.screens.ProfileScreen
 
 
 @ExperimentalComposeUiApi
