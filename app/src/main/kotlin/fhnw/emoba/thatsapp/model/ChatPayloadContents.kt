@@ -18,7 +18,7 @@ enum class ChatPayloadContents() {
 val DEFAULT_IMAGE = Bitmap.createBitmap(
     500,
     500,
-    Bitmap.Config.ALPHA_8).asImageBitmap()
+    Bitmap.Config.ALPHA_8)
 
 data class ChatText(
     val body: String // when sending a message

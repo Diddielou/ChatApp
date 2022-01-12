@@ -8,9 +8,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import fhnw.emoba.freezerapp.ui.theme.ThatsAppTheme
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
-import fhnw.emoba.thatsapp.ui.screens.AddChatScreen
-import fhnw.emoba.thatsapp.ui.screens.ChatScreen
-import fhnw.emoba.thatsapp.ui.screens.MainScreen
+import fhnw.emoba.thatsapp.ui.screens.*
 import fhnw.emoba.thatsapp.ui.screens.ProfileScreen
 
 
@@ -19,7 +17,6 @@ import fhnw.emoba.thatsapp.ui.screens.ProfileScreen
 @Composable
 fun AppUI(model : ThatsAppModel){
     with(model){
-        //Text(text = title, style = TextStyle(fontSize = 28.sp))
         ThatsAppTheme(model.darkTheme){
             Crossfade(targetState = currentScreen) { screen ->
                 when (screen) {
@@ -27,6 +24,7 @@ fun AppUI(model : ThatsAppModel){
                     Screen.ADDCHAT -> { AddChatScreen(model) }
                     Screen.CHAT -> { ChatScreen(model) }
                     Screen.PROFILE -> {  ProfileScreen(model) }
+                    Screen.FULL_IMAGE -> {  FullImageScreen(model) }
                 }
             }
         }

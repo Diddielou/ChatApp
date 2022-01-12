@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import fhnw.emoba.R
 import fhnw.emoba.thatsapp.data.*
@@ -39,6 +40,8 @@ class ThatsAppModel(
 
     // Screen
     var currentScreen by mutableStateOf(Screen.MAIN)
+    var backScreen by mutableStateOf(Screen.MAIN)
+    var showImageBig by mutableStateOf<Bitmap>(DEFAULT_IMAGE)
 
     // Theme
     var darkTheme by mutableStateOf(false)
@@ -57,9 +60,7 @@ class ThatsAppModel(
     }
 
 
-    /**
-     * MQTT variables
-     */
+    /* MQTT variables */
     val mqttBroker = "broker.hivemq.com"
     val mainTopic = "fhnw/emoba/thatsapp01cc"
     val notificationTopic = "/notifications/users/"
@@ -415,6 +416,7 @@ class ThatsAppModel(
     private fun downloadUserImageFromURL(chatUser: ChatUser) {
         modelScope.launch {
             downloadInProgress = true
+            println(chatUser.userImage)
             if (chatUser.userImage.isNotEmpty() && chatUser.userImage.startsWith("https://")) {
                 downloadBitmapFromURL(
                     url = chatUser.userImage,
@@ -433,7 +435,7 @@ class ThatsAppModel(
     }
 
     private fun loadProfileImageFromStorage(): Bitmap {
-        return DEFAULT_IMAGE.asAndroidBitmap()
+        return DEFAULT_IMAGE
     }
 
     /* LOCATION */

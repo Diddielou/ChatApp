@@ -1,7 +1,5 @@
 package fhnw.emoba.thatsapp.ui.screens
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,15 +53,15 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen) {
     with(model) {
         TopAppBar(
             title = {
-                Row(Modifier.width(305.dp),
+                Row(Modifier.width(310.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ){
-                    Column() {
+                    Column {
                         Heading3(title)
-                        LastOnlineOrTyping(model, currentChatPartner!!)
+                        LastOnlineOrTyping(model, currentChatPartner!!) // TODO
                     }
-                    ProfileImage(currentChatPartner!!, 45)
+                    UserImage(currentChatPartner!!, 45)
                 }
             },
             navigationIcon = {
@@ -108,13 +106,7 @@ private fun AllMessagesList(model: ThatsAppModel, modifier: Modifier) {
     val messagesInThisChat =
         model.currentChatPartner?.let { model.filterMessagesPerConversation(it) }
 
-    Box(
-        modifier.border(
-            width = 1.dp,
-            brush = SolidColor(Color.Transparent),
-            shape = RectangleShape
-        )
-    ) {
+    Box() {
         if (messagesInThisChat!!.isEmpty()) {
             OnScreenMessage("No messages yet.")
         } else {
@@ -165,7 +157,12 @@ private fun MessageRow(chatMessage: ChatMessage, model: ThatsAppModel) {
                     rowContent = { Image(
                         bitmap = chatMessage.bitmap!!.asImageBitmap(),
                         contentDescription = "Sent Image",
-                        modifier = Modifier.height(200.dp)) }
+                        modifier = Modifier.height(200.dp).clickable {
+                            model.currentScreen = Screen.FULL_IMAGE
+                            model.backScreen = Screen.CHAT
+                            model.showImageBig = chatMessage.bitmap!!
+                        }
+                    ) }
                 )
             }
             ChatPayloadContents.LOCATION.name -> {

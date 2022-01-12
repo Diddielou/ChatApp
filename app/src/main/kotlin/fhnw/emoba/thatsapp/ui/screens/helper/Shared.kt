@@ -1,5 +1,6 @@
 package fhnw.emoba.thatsapp.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,7 +11,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,13 +23,12 @@ import fhnw.emoba.thatsapp.data.ChatUser
 import fhnw.emoba.thatsapp.model.Screen
 import fhnw.emoba.thatsapp.model.ThatsAppModel
 
-/* To go back */
 @Composable
-fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen) {
+fun GeneralTopBar(model: ThatsAppModel, title: String, backScreen: Screen) {
     with(model) {
         TopAppBar(
             title = { Text(text = title ) },
-            navigationIcon = { IconButton(onClick = { currentScreen = screen }) {
+            navigationIcon = { IconButton(onClick = { currentScreen = backScreen }) {
                 Icon(Icons.Filled.ArrowBack, "Back")
                 }
             }
@@ -39,22 +38,31 @@ fun GeneralTopBar(model: ThatsAppModel, title: String, screen: Screen) {
 
 /* USERS */
 @Composable
-fun ProfileImage(user: ChatUser, size: Int) {
-    val imageModifier = Modifier
-        .size(size.dp)
-        .clip(CircleShape)
-        .border(1.dp, Color.Transparent, CircleShape)
+fun UserImage(user: ChatUser, size: Int) {
+    val iconSize = size + 0
 
-    if(user.userProfileImage != null){
-        Image(
-            bitmap = user.userProfileImage!!.asImageBitmap(),
-            contentDescription = "Profile image",
-            modifier = imageModifier
-        )
+    Surface(
+        modifier = Modifier.defaultMinSize(size.dp),
+        shape = CircleShape,
+        border = BorderStroke(0.5.dp, MaterialTheme.colors.onSurface)
+    ) {
+        if(user.userProfileImage != null){
+            Image(
+                bitmap = user.userProfileImage!!.asImageBitmap(),
+                contentDescription = "User image",
+                modifier = Modifier.size(size.dp)
+            )
+        }
+        else {
+            Icon(
+                imageVector = Icons.Default.AccountCircle,
+                contentDescription = "No User image",
+                modifier = Modifier.size(iconSize.dp),
+                tint = MaterialTheme.colors.secondary.copy(alpha = 0.3f)
+            )
+        }
     }
-    else {
-        Icon(Icons.Filled.AccountCircle, "No profile picture", Modifier.size(size.dp))
-    }
+
 }
 
 @Composable
@@ -104,7 +112,9 @@ fun LoadingIndicator() {
 @Composable
 fun OnScreenMessage(message: String) {
     Column(
-        modifier = Modifier.fillMaxWidth().fillMaxHeight(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

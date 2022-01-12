@@ -163,20 +163,23 @@ private fun ProfilePicture(model: ThatsAppModel, state: ModalBottomSheetState) {
                         Image(
                             bitmap = profileImage!!.asImageBitmap(),
                             contentDescription = "Profile image",
-                            modifier = imageModifier
+                            modifier = imageModifier.clickable {
+                                currentScreen = Screen.FULL_IMAGE
+                                backScreen = Screen.PROFILE
+                                showImageBig = profileImage!!
+                            }
                         )
                     } else {
                         Icon(
                             Icons.Filled.AccountCircle,
-                            "Empty profile image",
+                            contentDescription = "Empty profile image",
                             modifier = imageModifier,
                             tint = MaterialTheme.colors.secondary.copy(alpha = 0.3f)
                         )
                     }
                 }
-                // Show ModalBottomSheet
                 IconButton(
-                    onClick = { scope.launch { state.show() } },
+                    onClick = { scope.launch { state.show() } }, // Show ModalBottomSheet
                     content = { Icon(imageVector = Icons.Filled.PhotoCamera,
                         contentDescription = "Change profile image",
                         tint = MaterialTheme.colors.onSecondary

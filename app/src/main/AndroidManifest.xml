@@ -32,6 +32,7 @@
         </provider>
         <activity
             android:name="fhnw.emoba.MainActivity"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/EmobaTheme.NoActionBar"
             android:exported="true">
             <intent-filter>

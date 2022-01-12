@@ -75,7 +75,7 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
             secondaryText = {
                 LastOnlineOrTyping(model, user)
             },
-            trailing = { ProfileImage(user, 50) }
+            trailing = { UserImage(user, 50) }
         )
         Divider()
     }
