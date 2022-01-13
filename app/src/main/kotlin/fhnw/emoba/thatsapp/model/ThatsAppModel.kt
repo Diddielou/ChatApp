@@ -60,7 +60,7 @@ class ThatsAppModel(
 
     /* MQTT variables */
     val mqttBroker = "broker.hivemq.com"
-    val mainTopic = "fhnw/emoba/thatsapp01cc"
+    val mainTopic = "fhnw/emoba/thatsapp01dd"
     val notificationTopic = "/notifications/users/"
     val userTopic = "/users/"
 
