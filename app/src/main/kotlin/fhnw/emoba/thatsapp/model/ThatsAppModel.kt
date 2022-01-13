@@ -35,20 +35,16 @@ class ThatsAppModel(
     /*  UI  */
     // Texts
     var drawerTitle = "Settings"
-
     // Screen
     var currentScreen by mutableStateOf(Screen.MAIN)
     var backScreen by mutableStateOf(Screen.MAIN)
     var showImageBig by mutableStateOf<Bitmap>(DEFAULT_IMAGE)
-
     // Theme
     var darkTheme by mutableStateOf(false)
         private set
-
     fun toggleTheme() {
         darkTheme = !darkTheme
     }
-
     fun toggleThemeText(): String {
         return if (darkTheme) {
             "Go light"
@@ -65,21 +61,17 @@ class ThatsAppModel(
     val userTopic = "/users/"
 
     private val mqttConnector by lazy { MqttConnector(mqttBroker, mainTopic) }
-    private val soundPlayer by lazy { MediaPlayer.create(context, R.raw.hangouts_message) }
-
-    var isLoading by mutableStateOf(false)
-
-    // excluded: LIVE & INFO
-    var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
 
     /* MESSAGES */
+    var currentMessageOptionSend by mutableStateOf(ChatPayloadContents.NONE)
+    private val soundPlayer by lazy { MediaPlayer.create(context, R.raw.hangouts_message) }
     var textMessageToSend by mutableStateOf("")
     var imageMessageToSend by mutableStateOf<Bitmap?>(null) // bleibt nur bei mir
     var isTypingSend by mutableStateOf(false)
-
     val allMessages = mutableStateListOf<ChatMessage>()
     var notificationMessage by mutableStateOf("")
     var messageSent by mutableStateOf(false)
+    var isLoading by mutableStateOf(false)
 
     /* USERS */
     val allUsers = mutableStateListOf<ChatUser>()
@@ -88,7 +80,6 @@ class ThatsAppModel(
     /* PHOTO */
     var imageUri by mutableStateOf<Uri?>(null)
     var textFieldProfileURL by mutableStateOf(false)
-    var photo by mutableStateOf<Bitmap?>(null)
 
     /* LOCATION */
     var locationMessageToSend by mutableStateOf<GeoPosition?>(null) // bleibt nur bei mir
@@ -136,7 +127,7 @@ class ThatsAppModel(
         return profile
     }
 
-    // Prefs speichern
+    // Preferences speichern
     fun updatePrefs() {
         val prefs = context.getSharedPreferences("thatsAppPreferences", MODE_PRIVATE)
         val editor = prefs.edit()
@@ -148,6 +139,7 @@ class ThatsAppModel(
         editor.apply()
     }
 
+    /* FUNCTIONS */
 
     /* USERS */
     private fun getUserById(id: String): ChatUser? {
@@ -211,26 +203,6 @@ class ThatsAppModel(
     }
 
 
-    /* MQTT methods */
-    fun connectAndSubscribe() {
-        mqttConnector.connectAndSubscribe(
-            subtopic = userTopic,
-            onNewMessageUsers = {
-                addOrUpdateUserList(it)
-            },
-            onError = { _, p ->
-                notificationMessage = p
-                playSound()
-            },
-            profileUser = loadOrCreateProfile(),
-            profileUserTopic = "$userTopic$profileId",
-            thisUserNotificationTopic = "$notificationTopic$profileId",
-            onNewMessages = {
-                processMessage(it)
-            }
-        )
-    }
-
     /* SEND MESSAGES */
     fun prePublish() {
         when (currentMessageOptionSend) { // ChatPayloadContents.NONE,
@@ -250,6 +222,26 @@ class ThatsAppModel(
         }
     }
 
+
+    /* MQTT methods */
+    fun connectAndSubscribe() {
+        mqttConnector.connectAndSubscribe(
+            subtopic = userTopic,
+            onNewMessageUsers = {
+                addOrUpdateUserList(it)
+            },
+            onError = { _, p ->
+                notificationMessage = p
+                playSound()
+            },
+            profileUser = loadOrCreateProfile(),
+            profileUserTopic = "$userTopic$profileId",
+            thisUserNotificationTopic = "$notificationTopic$profileId",
+            onNewMessages = {
+                processMessage(it)
+            }
+        )
+    }
 
     fun publish() {
         var payloadToSend = JSONObject()
@@ -324,17 +316,6 @@ class ThatsAppModel(
             },
             onCanceled = { notificationMessage = "Aborted taking image." })
         isLoading = false
-    }
-
-    fun rotatePhoto() {
-        photo?.let { modelScope.launch { photo = photo!!.rotate(90f) } }
-    }
-
-    private fun Bitmap.rotate(degrees: Float): Bitmap {
-        val matrix = Matrix().apply {
-            postRotate(degrees)
-        }
-        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     fun takePhotoForProfileImage() {
@@ -429,6 +410,7 @@ class ThatsAppModel(
         }
     }
 
+    // not implemented
     private fun loadProfileImageFromStorage(): Bitmap {
         return DEFAULT_IMAGE
     }
