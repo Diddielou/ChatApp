@@ -1,8 +1,6 @@
 package fhnw.emoba.thatsapp.ui.screens
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -47,7 +45,6 @@ fun ProfileScreen(model: ThatsAppModel) {
 
 
 // TODO: ModalBottomDrawer should not be shown anymore, when action took place.
-// TODO: Image should be made big onClick
 @ExperimentalComposeUiApi
 @Composable
 @ExperimentalMaterialApi
@@ -142,8 +139,12 @@ private fun ProfilePicture(model: ThatsAppModel, state: ModalBottomSheetState) {
         val imageModifier = Modifier
             .size(275.dp)
             .clip(CircleShape)
-            Box{
-                Row {
+            Box {
+                Surface(
+                    //modifier = Modifier.defaultMinSize(size.dp),
+                    shape = CircleShape,
+                    border = BorderStroke(1.5.dp, MaterialTheme.colors.primary)
+                ) {
                     if (profileImage != null) {
                         Image(
                             bitmap = profileImage!!.asImageBitmap(),

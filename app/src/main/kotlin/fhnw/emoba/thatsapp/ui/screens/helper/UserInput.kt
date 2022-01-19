@@ -8,6 +8,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -89,8 +92,9 @@ fun UserInput(
                     SendButton(
                         sendMessageEnabled =
                             if (
-                                currentMessageOption == ChatPayloadContents.EMOJI ||
-                                currentMessageOption == ChatPayloadContents.TEXT
+                                currentMessageOption == ChatPayloadContents.NONE ||
+                                currentMessageOption == ChatPayloadContents.TEXT ||
+                                currentMessageOption == ChatPayloadContents.EMOJI
                             ) {
                                 model.textMessageToSend.isNotEmpty()
                             } else if (currentMessageOption == ChatPayloadContents.IMAGE ||
@@ -104,7 +108,6 @@ fun UserInput(
                         onMessageSend = {
                             model.currentMessageOptionSend = currentMessageOption
                             model.prePublish()
-                            currentMessageOption = ChatPayloadContents.NONE
                         }
                     )
             }
@@ -263,9 +266,9 @@ fun EmojiOption(
             // Make the emoji option focusable so it can steal focus from TextField
             .focusTarget(),
 
-        // TODO Scrolling right doesn't work
+        // Scrolling not correctly implemented (see EmojiTable)
         modifierRow = Modifier.verticalScroll(rememberScrollState()),
-        nullable = true,
+        nullable = false,
         rowContent = {
             EmojiTable(
                 onTextAdded,
@@ -430,7 +433,8 @@ fun Option(
     }
 }
 
-
+/* Not fully working: only the first 40 emojis are displayed:
+   can't scroll through whole list. LazyVerticalGrid couldn't be implemented. */
 @Composable
 private fun EmojiTable(
     onTextAdded: (String) -> Unit,
@@ -447,11 +451,11 @@ private fun EmojiTable(
                     Text(
                         modifier = Modifier
                             .clickable(onClick = { onTextAdded(emoji) })
-                            .sizeIn(minWidth = 45.dp, minHeight = 45.dp) // TODO
-                            .padding(8.dp),
+                            .sizeIn(minWidth = 35.dp, minHeight = 40.dp)
+                            .padding(0.dp),
                         text = emoji,
                         style = LocalTextStyle.current.copy(
-                            fontSize = 18.sp, // TODO
+                            fontSize = 23.sp,
                             textAlign = TextAlign.Center
                         )
                     )

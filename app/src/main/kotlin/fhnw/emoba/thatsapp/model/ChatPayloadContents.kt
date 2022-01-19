@@ -65,7 +65,7 @@ data class ChatLocation(
     }
 }
 
-/* not implemented */
+/* not fully implemented */
 data class ChatLive(val typing : String){
 
     constructor(payload: JSONObject) : this(

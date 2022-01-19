@@ -36,12 +36,10 @@ fun GeneralTopBar(model: ThatsAppModel, title: String, backScreen: Screen) {
 /* USERS */
 @Composable
 fun UserImage(user: ChatUser, size: Int) {
-    val iconSize = size + 0
-
     Surface(
         modifier = Modifier.defaultMinSize(size.dp),
         shape = CircleShape,
-        border = BorderStroke(0.5.dp, MaterialTheme.colors.onSurface)
+        border = BorderStroke(1.5.dp, MaterialTheme.colors.primary)
     ) {
         if(user.userProfileImage != null){
             Image(
@@ -54,8 +52,8 @@ fun UserImage(user: ChatUser, size: Int) {
             Icon(
                 imageVector = Icons.Default.AccountCircle,
                 contentDescription = "No User image",
-                modifier = Modifier.size(iconSize.dp),
-                tint = MaterialTheme.colors.secondary.copy(alpha = 0.3f)
+                modifier = Modifier.size(size.dp),
+                tint = MaterialTheme.colors.secondary.copy(alpha = 0.65f)
             )
         }
     }

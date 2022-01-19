@@ -170,10 +170,12 @@ class ThatsAppModel(
     fun processMessage(message: ChatMessage) {
         if (message.messageType == ChatPayloadContents.TEXT.name) {
             addMessage(message)
+            playSound()
         }
         if (message.messageType == ChatPayloadContents.IMAGE.name) {
             val chatImageURL = ChatImage(message.payload).url
             downloadMessageImage(chatImageURL, message)
+            playSound()
         }
         if (message.messageType == ChatPayloadContents.LOCATION.name) {
             val chatLocation = ChatLocation(message.payload)
@@ -184,10 +186,8 @@ class ThatsAppModel(
             )
             message.position = geoPosition
             addMessage(message)
+            playSound()
         }
-        playSound()
-
-        // TODO check or delete
         if (message.messageType == ChatPayloadContents.LIVE.name) {
             val chatLive = ChatLive(message.payload)
             val user = getUserById(message.senderID)
@@ -205,7 +205,7 @@ class ThatsAppModel(
 
     /* SEND MESSAGES */
     fun prePublish() {
-        when (currentMessageOptionSend) { // ChatPayloadContents.NONE,
+        when (currentMessageOptionSend) {
             ChatPayloadContents.EMOJI, ChatPayloadContents.TEXT, ChatPayloadContents.LOCATION -> {
                 publish()
             }
@@ -217,7 +217,7 @@ class ThatsAppModel(
                 uploadImageToFileIO()
             }
             else -> {
-                notificationMessage = "Publish failed."
+                notificationMessage = "Pre-Publish failed."
             }
         }
     }
@@ -340,15 +340,15 @@ class ThatsAppModel(
     private fun downloadMessageImage(chatImageURL: String, message: ChatMessage) {
         modelScope.launch {
             downloadInProgress = true
-            if (chatImageURL.isNotEmpty() && chatImageURL.startsWith("https://www.file.io/")) {
+            if (chatImageURL.isNotEmpty() && chatImageURL.contains("file.io")) {
                 downloadBitmapFromURL(
                     url = chatImageURL,
                     onSuccess = {
                         message.bitmap = it
                         addMessage(message)
                     },
-                    onDeleted = { notificationMessage = "Image is deleted." },
-                    onError = { notificationMessage = "Connection failed." })
+                    onDeleted = { notificationMessage = "Download msg image: Image is deleted." },
+                    onError = { notificationMessage = "Download msg image: Connection failed." })
                 downloadInProgress = false
             }
         }

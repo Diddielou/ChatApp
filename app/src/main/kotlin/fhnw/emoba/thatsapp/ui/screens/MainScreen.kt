@@ -90,7 +90,7 @@ private fun UserRow(user: ChatUser, model: ThatsAppModel) {
             }),
             text = { Text(nickname) },
             secondaryText = {
-                LastOnlineOrTyping(model, user) // TODO
+                LastOnlineOrTyping(model, user)
             },
             trailing = { UserImage(user, 45) }
         )

@@ -62,7 +62,7 @@ fun ChatTopBar(model: ThatsAppModel, title: String, screen: Screen) {
                 ){
                     Column {
                         Heading3(title)
-                        LastOnlineOrTyping(model, currentChatPartner!!) // TODO
+                        LastOnlineOrTyping(model, currentChatPartner!!)
                     }
                     UserImage(currentChatPartner!!, 45)
                 }
