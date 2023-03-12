@@ -4,7 +4,7 @@ A student project as part of the module "Mobile application development" taught 
 
 === Screenshot
 
-image::../app/src/main/res/ThatsApp-Screenshot.png[height=250]
+image::./app/src/main/res/ThatsApp-Screenshot.png[height=400]
 
 Assignment description in German:
 
