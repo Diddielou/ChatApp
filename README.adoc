@@ -3,7 +3,8 @@
 A student project as part of the module "Mobile application development" taught by Dr. Dieter Holz at the University of Applied Sciences Northwestern (FHNW)
 
 === Screenshot
-image::../thatsapp-hs21-Diddielou/app/src/main/res/ThatsApp-Screenshot.png[height=250]
+
+image::../app/src/main/res/ThatsApp-Screenshot.png[height=250]
 
 Assignment description in German:
 
