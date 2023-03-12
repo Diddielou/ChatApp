@@ -1,48 +1,20 @@
-== Emoba Assignment 2 - ThatsApp
+== ThatsApp
 
-=== Bearbeitet von
+A student project as part of the module "Mobile application development" taught by Dr. Dieter Holz at the University of Applied Sciences Northwestern (FHNW)
 
-* Dinah Bolli
+=== Screenshot
+image::../thatsapp-hs21-Diddielou/app/src/main/res/ThatsApp-Screenshot.png[height=250]
 
-=== Kompatibel mit der App von
-
-* Michael Job
-* Tobias Bossert
-* Moritz Wirth
-* Jürg Gnos
-* Jeffrey Smith
-* Ives With
-* Patrick Gutter
-* Pascal Hostettler
-* Natalie Frei
-* Alexandra Marti
-* Thierry Odermatt
-* Tobias Vonesch
-
-=== Herausstellungsmerkmal meiner App
-
-* Die App ist besonders benutzerfreundlich.
-* Die Profildaten werden persistiert und sind beim nächsten Start der App wieder verfügbar.
-
-=== Abgabe
-
-* _Klasse 5iCa_, Montag, 17.1.2022, 8:00 Uhr
-* _Klasse 5iCb_, Mittwoch, 19.1.2022, 12:00 Uhr
-
-
-Die Abgabe erfolgt durch ein "Push" auf den Master-Branch Ihres GitHub-Repositories.
-
+Assignment description in German:
 
 === Die Aufgabe: Chat-Applikation
 
 Entwerfen und implementieren Sie eine Chat-Applikation als native Android App mit Kotlin und Jetpack Compose.
 
-Die im Unterricht gezeigte App 'ThatsApp' ist nur eine mögliche Umsetzung des gewünschten Funktionsumfangs. Sie können dieses UI übernehmen oder aber einen eigenen Entwurf umsetzen.
-
 Anforderungen:
 
-* Legen Sie das wichtigste Herausstellungsmerkmal Ihrer App fest und beschreiben Sie es im obigen Abschnitt
-** Beispiele: minimale Datenspeicherung auf dem Server; gesamte Chat-Historie wird abgespeichert; besonders einfache Bedienbarkeit, etc.
+* Legen Sie das wichtigste Herausstellungsmerkmal Ihrer App fest und beschreiben Sie es:
+** Herausstellungsmerkmal meiner App: Die App ist besonders benutzerfreundlich. Die Profildaten werden persistiert und sind beim nächsten Start der App wieder verfügbar.
 
 * Gewünschte Funktionalität
 ** Verschicken von Chat-Nachrichten an einzelne Personen einer Chat-Gruppe. ✔
@@ -58,7 +30,6 @@ Anforderungen:
 ** https://developer.android.com/jetpack/compose
 * Implementierungssprache für die gesamte Applikation ist Kotlin. ✔
 * Die im Unterricht erarbeitete Grundstruktur einer Android-App ist anzuwenden. ✔
-
 
 === Bewertung
 
